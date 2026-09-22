@@ -100,9 +100,5 @@ Do not report:
 
 ## 7. Produce the review
 
-List findings before any summary. Order findings by remediation urgency, then
-by their position in the change. Each finding must be concise, respectful, and
-actionable.
-
-When no actionable defect is found, say so plainly. Mention residual risk or
-verification gaps only when they materially affect confidence in the review.
+Follow [output-contract.md](output-contract.md) for priority, finding content,
+language selection, and the final response structure.
