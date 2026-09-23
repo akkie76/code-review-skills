@@ -6,6 +6,18 @@ This repository is in a maintainer-led beta. General support requests,
 unsolicited Issues, and unsolicited pull requests are not accepted during
 this period.
 
+## Request prior agreement
+
+Before opening an Issue or pull request, or sending beta feedback, contact the
+maintainer by direct message on X:
+
+- [@akkiee76](https://x.com/akkiee76)
+
+Briefly describe what you want to report or propose and wait for confirmation
+before submitting it to the repository. Do not send private source code,
+credentials, personal data, or undisclosed vulnerability details in the direct
+message. Follow [SECURITY.md](SECURITY.md) for suspected vulnerabilities.
+
 The maintainer may announce a limited feedback channel for a specific beta or
 evaluation round. When such a channel is open, useful reports include:
 
