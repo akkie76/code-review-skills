@@ -1,0 +1,18 @@
+{
+  "id": "positive-pagination",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The new loop never advances page, so a full first page causes repeated requests and duplicate results until maxPages."
+    ],
+    "must_not_report": [
+      "Pure style or naming preferences.",
+      "A claim that maxPages itself is necessarily too large."
+    ],
+    "output": "findings"
+  }
+}
