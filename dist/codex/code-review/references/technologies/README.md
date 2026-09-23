@@ -1,5 +1,7 @@
 # Project Technology Guidance
 
+[日本語](README.ja.md)
+
 Add the project information needed for accurate technology-specific reviews to
 this directory. The contents are intentionally not prescribed by Code Review
 Skills because the relevant languages, frameworks, SDKs, versions, tools, and

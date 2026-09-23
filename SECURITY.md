@@ -1,5 +1,7 @@
 # Security Policy
 
+[日本語](SECURITY.ja.md)
+
 ## Supported versions
 
 Until the first stable release, only the latest commit on the default branch

@@ -1,5 +1,7 @@
 # Support and Feedback Policy
 
+[日本語](SUPPORT.ja.md)
+
 This repository is in a maintainer-led beta. General support requests,
 unsolicited Issues, and unsolicited pull requests are not accepted during
 this period.

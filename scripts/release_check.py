@@ -61,10 +61,21 @@ def main() -> int:
         "README.ja.md",
         "LICENSE",
         "SECURITY.md",
+        "SECURITY.ja.md",
         "SUPPORT.md",
+        "SUPPORT.ja.md",
         "CHANGELOG.md",
+        "CHANGELOG.ja.md",
         "docs/CONTENT_POLICY.md",
+        "docs/CONTENT_POLICY.ja.md",
+        "docs/DEVELOPMENT.md",
+        "docs/DEVELOPMENT.ja.md",
         "docs/RELEASE_CHECKLIST.md",
+        "docs/RELEASE_CHECKLIST.ja.md",
+        "docs/releases/v0.1.0.md",
+        "docs/releases/v0.1.0.ja.md",
+        "tests/README.md",
+        "tests/README.ja.md",
     }
     missing = required - {path.as_posix() for path in tracked}
     errors.extend(f"missing release file: {path}" for path in sorted(missing))

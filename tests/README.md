@@ -1,5 +1,7 @@
 # Behavioral Evaluations
 
+[日本語](README.ja.md)
+
 These evaluations test the behavior of the generated skill without requiring
 an exact wording match. Each case provides a review request, repository
 context, a patch, and observable expectations.

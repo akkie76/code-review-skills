@@ -67,7 +67,7 @@ make test   # 上記に加えて行動評価fixtureを検証
 ```
 
 `make build`はPython標準ライブラリだけを使用し、ネットワーク接続を必要としません。
-各エージェントでの手動評価方法は[評価ガイド](tests/README.md)を参照してください。
+各エージェントでの手動評価方法は[評価ガイド](tests/README.ja.md)を参照してください。
 
 ### プロジェクト固有の技術情報
 
@@ -83,11 +83,12 @@ Skillsでは技術カタログや固定テンプレートを強制しません�
 ## プロジェクト方針
 
 現在はメンテナー主導でベータ版を検証しています。事前の合意がないIssueと
-Pull Requestは受け付けていません。フィードバック方針は[SUPPORT.md](SUPPORT.md)、
-脆弱性の非公開報告については[SECURITY.md](SECURITY.md)を参照してください。
+Pull Requestは受け付けていません。フィードバック方針は
+[SUPPORT.ja.md](SUPPORT.ja.md)、脆弱性の非公開報告については
+[SECURITY.ja.md](SECURITY.ja.md)を参照してください。
 
 このリポジトリは独自に執筆した内容で構成しています。参照資料との境界と公開方針は
-[docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md)に記載しています。
+[docs/CONTENT_POLICY.ja.md](docs/CONTENT_POLICY.ja.md)に記載しています。
 
 ## ライセンス
 

@@ -16,6 +16,8 @@ SOURCE_FILES = (
 )
 REFERENCE_FILES = {
     Path("references/technologies/README.md"): ROOT / "src/technologies/README.md",
+    Path("references/technologies/README.ja.md"): ROOT
+    / "src/technologies/README.ja.md",
 }
 TARGETS = {
     "codex": ROOT / "dist/codex/code-review/SKILL.md",

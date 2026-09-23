@@ -1,5 +1,7 @@
 # Development Guide
 
+[日本語](DEVELOPMENT.ja.md)
+
 ## Source model
 
 Edit the shared review methodology under `src/core/`. The optional technology

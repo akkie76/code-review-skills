@@ -1,5 +1,7 @@
 # Release Checklist
 
+[日本語](RELEASE_CHECKLIST.ja.md)
+
 This checklist separates checks that can run locally from approvals and
 behavioral evidence that require a human decision. Do not tag or publish a
 release while any required item remains incomplete.

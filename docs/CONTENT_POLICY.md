@@ -1,5 +1,7 @@
 # Content and Publication Policy
 
+[日本語](CONTENT_POLICY.ja.md)
+
 ## Purpose
 
 This repository publishes an independently authored workflow for code-review
