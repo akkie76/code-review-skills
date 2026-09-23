@@ -78,9 +78,8 @@ information needed for accurate reviews under the installed skill's
 of detail; Code Review Skills does not prescribe a technology catalog.
 
 Relevant material can include version constraints, lifecycle or concurrency
-rules, architecture conventions, verification commands, and Skills exported
-by development tools such as Xcode when their terms permit it. If no guidance
-is supplied, the reviewer uses repository evidence and avoids assuming
+rules, architecture conventions, and verification commands. If no guidance is
+supplied, the reviewer uses repository evidence and avoids assuming
 technology-specific guarantees.
 
 ## Project policy

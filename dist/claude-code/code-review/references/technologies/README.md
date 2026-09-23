@@ -14,9 +14,8 @@ Useful information may include:
 - Guarantees provided by the compiler, runtime, framework, or infrastructure.
 - Known compatibility requirements and unsupported patterns.
 
-You may add Markdown guidance, link to authoritative project documentation, or
-use relevant Skills exported by development tools such as Xcode when their
-terms permit it. Do not copy private or third-party material without permission.
+You may add Markdown guidance or link to authoritative project documentation.
+Do not copy private or third-party material without permission.
 
 Keep the guidance limited to information that changes how a review should be
 investigated or judged. Repository instructions and verified project behavior
