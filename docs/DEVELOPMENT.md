@@ -2,13 +2,15 @@
 
 ## Source model
 
-Edit the shared review methodology under `src/core/`. The generator combines
-those files into self-contained packages under `dist/` for every supported
-agent. Do not edit a generated `SKILL.md` directly.
+Edit the shared review methodology under `src/core/`. The optional technology
+guidance entry point lives under `src/technologies/`. The generator combines
+these sources into self-contained packages under `dist/` for every supported
+agent. Do not edit generated package files directly.
 
 ## Change procedure
 
-1. Make the smallest vendor-neutral change under `src/core/`.
+1. Make the smallest vendor-neutral change under `src/core/` or
+   `src/technologies/`.
 2. Add or update a behavioral evaluation under `tests/cases/`.
 3. Run `make build`.
 4. Run `make test`.

@@ -70,6 +70,19 @@ make test   # also validate behavioral evaluation fixtures
 network access. See [the evaluation guide](tests/README.md) for manual testing
 with each agent.
 
+### Project technology guidance
+
+Language, framework, SDK, and tool requirements vary by project. Add the
+information needed for accurate reviews under the installed skill's
+`references/technologies/` directory. The project decides the format and level
+of detail; Code Review Skills does not prescribe a technology catalog.
+
+Relevant material can include version constraints, lifecycle or concurrency
+rules, architecture conventions, verification commands, and Skills exported
+by development tools such as Xcode when their terms permit it. If no guidance
+is supplied, the reviewer uses repository evidence and avoids assuming
+technology-specific guarantees.
+
 ## Project policy
 
 This project currently follows a maintainer-led beta process. Unsolicited

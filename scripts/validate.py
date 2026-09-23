@@ -41,8 +41,17 @@ def main() -> int:
         if re.search(r"\[[^]]+\]\((?!https?://|#)[^)]+\)", text):
             errors.append(f"package contains a non-self-contained relative link: {relative}")
         local_home_prefix = "/" + "Users/"
-        if local_home_prefix in text:
-            errors.append(f"package contains a local or private source reference: {relative}")
+        technology_guide = package.parent / "references/technologies/README.md"
+        if not technology_guide.is_file():
+            errors.append(f"package is missing technology guidance: {relative}")
+        for bundled_file in package.parent.rglob("*"):
+            if bundled_file.is_file() and local_home_prefix in bundled_file.read_text(
+                encoding="utf-8"
+            ):
+                errors.append(
+                    "package contains a local source reference: "
+                    f"{bundled_file.relative_to(ROOT)}"
+                )
 
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors))

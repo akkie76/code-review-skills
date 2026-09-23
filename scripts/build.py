@@ -14,6 +14,9 @@ SOURCE_FILES = (
     ROOT / "src/core/review-criteria.md",
     ROOT / "src/core/output-contract.md",
 )
+REFERENCE_FILES = {
+    Path("references/technologies/README.md"): ROOT / "src/technologies/README.md",
+}
 TARGETS = {
     "codex": ROOT / "dist/codex/code-review/SKILL.md",
     "claude-code": ROOT / "dist/claude-code/code-review/SKILL.md",
@@ -66,6 +69,11 @@ def write_outputs(content: str) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("w", encoding="utf-8", newline="\n") as output:
             output.write(content)
+        for relative, source in REFERENCE_FILES.items():
+            reference = target.parent / relative
+            reference.parent.mkdir(parents=True, exist_ok=True)
+            with reference.open("w", encoding="utf-8", newline="\n") as output:
+                output.write(source.read_text(encoding="utf-8"))
 
 
 def check_outputs(content: str) -> list[str]:
@@ -75,6 +83,16 @@ def check_outputs(content: str) -> list[str]:
             errors.append(f"missing generated package for {agent}: {target.relative_to(ROOT)}")
         elif target.read_text(encoding="utf-8") != content:
             errors.append(f"stale generated package for {agent}: {target.relative_to(ROOT)}")
+        for relative, source in REFERENCE_FILES.items():
+            reference = target.parent / relative
+            if not reference.exists():
+                errors.append(
+                    f"missing generated reference for {agent}: {reference.relative_to(ROOT)}"
+                )
+            elif reference.read_text(encoding="utf-8") != source.read_text(encoding="utf-8"):
+                errors.append(
+                    f"stale generated reference for {agent}: {reference.relative_to(ROOT)}"
+                )
     return errors
 
 
