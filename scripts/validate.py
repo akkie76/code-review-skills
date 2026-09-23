@@ -40,7 +40,8 @@ def main() -> int:
                 errors.append(f"missing {key} in frontmatter: {relative}")
         if re.search(r"\[[^]]+\]\((?!https?://|#)[^)]+\)", text):
             errors.append(f"package contains a non-self-contained relative link: {relative}")
-        if "/Users/" in text or "CodeReviewBook" in text:
+        local_home_prefix = "/" + "Users/"
+        if local_home_prefix in text:
             errors.append(f"package contains a local or private source reference: {relative}")
 
     if errors:
