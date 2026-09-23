@@ -1,0 +1,11 @@
+{
+  "id": "nits-project-style",
+  "kind": "positive",
+  "requests": [{"language": "en", "prompt": "Review the working tree changes."}],
+  "expectations": {
+    "must_report": ["The new user-facing message violates the repository's punctuation convention."],
+    "must_not_report": ["Report unrelated formatting preferences."],
+    "prefixes": ["NITS(Style)"],
+    "output": "findings"
+  }
+}

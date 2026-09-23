@@ -28,37 +28,41 @@ Code Review Skillsは、AIコーディングエージェント向けの、根拠
 
 ## インストール
 
-このリポジトリをcloneし、利用するエージェント向けの配布物を選択します。
+このリポジトリをcloneし、利用するエージェント向けのpackage directory全体を
+コピーします。`SKILL.md`だけをコピーすると必要なreferenceが含まれません。
 
 ### Codex
 
 ローカル環境の全プロジェクトで利用する場合：
 
 ```sh
-mkdir -p ~/.codex/skills/code-review
-cp dist/codex/code-review/SKILL.md ~/.codex/skills/code-review/SKILL.md
+mkdir -p ~/.codex/skills
+cp -R dist/codex/evidence-code-review ~/.codex/skills/
 ```
 
 特定のリポジトリだけで利用する場合は、そのリポジトリ内の
-`.agents/skills/code-review/SKILL.md`へコピーします。インストール後にCodexの
-新しいタスクを開始し、diff、commit、branch、Pull Request、または作業ツリーの
-レビューを依頼してください。
+`.agents/skills/evidence-code-review/`へpackage全体をコピーします。インストール後に
+Codexの新しいタスクを開始し、`evidence-code-review`を使ってdiff、commit、branch、
+Pull Request、または作業ツリーをレビューするよう依頼してください。
 
 ### Claude Code
 
 ローカル環境の全プロジェクトで利用する場合：
 
 ```sh
-mkdir -p ~/.claude/skills/code-review
-cp dist/claude-code/code-review/SKILL.md ~/.claude/skills/code-review/SKILL.md
+mkdir -p ~/.claude/skills
+cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 ```
 
 特定のリポジトリだけで利用する場合は、そのリポジトリ内の
-`.claude/skills/code-review/SKILL.md`へコピーします。`/code-review`で明示的に
-呼び出すか、Claude Codeへ変更のレビューを依頼してください。
+`.claude/skills/evidence-code-review/`へpackage全体をコピーします。
+`/evidence-code-review`で明示的に呼び出すか、Claude CodeへこのSkillを使って
+変更をレビューするよう依頼してください。
 
 Skillはエージェントへ指示を与えるものです。ほかの実行可能な開発設定と同様に、
 内容を確認してからインストールしてください。
+[インストールガイド](docs/INSTALLATION.ja.md)には、プロジェクト単位の導入、Windows、
+動作確認、更新、削除、トラブル対応を記載しています。
 
 ## 開発
 
@@ -77,9 +81,9 @@ make test   # 上記に加えて行動評価fixtureを検証
 ### プロジェクト固有の技術情報
 
 言語、フレームワーク、SDK、ツールの要件はプロジェクトごとに異なります。正確な
-レビューに必要な情報は、インストールしたSkillの`references/technologies/`へ
-追加してください。記載形式や詳しさは利用するプロジェクトが決定し、Code Review
-Skillsでは技術カタログや固定テンプレートを強制しません。
+レビューに必要な情報は、レビュー対象リポジトリの`AGENTS.md`、`CLAUDE.md`、または
+そこから参照するプロジェクト文書へ保存してください。更新で上書きされる可能性が
+あるため、インストール済みSkillは編集しません。
 
 バージョン制約、ライフサイクルや並行処理のルール、アーキテクチャ上の規約、検証
 コマンドなどを記載できます。情報が追加されていない場合、レビューではリポジトリ内の

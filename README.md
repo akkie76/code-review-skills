@@ -28,37 +28,41 @@ viewpoints, and communication rules.
 
 ## Install
 
-Clone this repository and choose the package for your agent.
+Clone this repository and copy the complete package directory for your agent.
+Copying only `SKILL.md` omits required references.
 
 ### Codex
 
 For all local projects:
 
 ```sh
-mkdir -p ~/.codex/skills/code-review
-cp dist/codex/code-review/SKILL.md ~/.codex/skills/code-review/SKILL.md
+mkdir -p ~/.codex/skills
+cp -R dist/codex/evidence-code-review ~/.codex/skills/
 ```
 
 For one repository, copy the package to
-`.agents/skills/code-review/SKILL.md` inside that repository instead. Start a
-new Codex task after installation, then ask it to review a diff, commit,
-branch, pull request, or working tree.
+`.agents/skills/evidence-code-review/` inside that repository instead. Start a
+new Codex task after installation, then ask it to use `evidence-code-review` to
+review a diff, commit, branch, pull request, or working tree.
 
 ### Claude Code
 
 For all local projects:
 
 ```sh
-mkdir -p ~/.claude/skills/code-review
-cp dist/claude-code/code-review/SKILL.md ~/.claude/skills/code-review/SKILL.md
+mkdir -p ~/.claude/skills
+cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 ```
 
 For one repository, copy the package to
-`.claude/skills/code-review/SKILL.md` inside that repository instead. Invoke it
-with `/code-review` or ask Claude Code to review a change.
+`.claude/skills/evidence-code-review/` inside that repository instead. Invoke
+it with `/evidence-code-review` or ask Claude Code to use the
+`evidence-code-review` skill.
 
 Review a skill before installing it. A skill supplies instructions to an
 agent and should be treated like other executable development configuration.
+See the [installation guide](docs/INSTALLATION.md) for project installation,
+Windows commands, verification, updates, removal, and troubleshooting.
 
 ## Development
 
@@ -77,10 +81,10 @@ with each agent.
 
 ### Project technology guidance
 
-Language, framework, SDK, and tool requirements vary by project. Add the
-information needed for accurate reviews under the installed skill's
-`references/technologies/` directory. The project decides the format and level
-of detail; Code Review Skills does not prescribe a technology catalog.
+Language, framework, SDK, and tool requirements vary by project. Store the
+information needed for accurate reviews in the reviewed repository's
+`AGENTS.md`, `CLAUDE.md`, or a project document referenced by those files. Do
+not edit the installed Skill; updates may replace it.
 
 Relevant material can include version constraints, lifecycle or concurrency
 rules, architecture conventions, and verification commands. If no guidance is

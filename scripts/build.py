@@ -11,21 +11,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_FILES = (
     ROOT / "src/core/workflow.md",
-    ROOT / "src/core/review-criteria.md",
-    ROOT / "src/core/output-contract.md",
-    ROOT / "src/core/communication-guidelines.md",
 )
 REFERENCE_FILES = {
+    Path("references/review-criteria.md"): ROOT / "src/core/review-criteria.md",
+    Path("references/output-contract.md"): ROOT / "src/core/output-contract.md",
+    Path("references/communication-guidelines.md"): ROOT
+    / "src/core/communication-guidelines.md",
     Path("references/technologies/README.md"): ROOT / "src/technologies/README.md",
     Path("references/technologies/README.ja.md"): ROOT
     / "src/technologies/README.ja.md",
 }
 TARGETS = {
-    "codex": ROOT / "dist/codex/code-review/SKILL.md",
-    "claude-code": ROOT / "dist/claude-code/code-review/SKILL.md",
+    "codex": ROOT / "dist/codex/evidence-code-review/SKILL.md",
+    "claude-code": ROOT / "dist/claude-code/evidence-code-review/SKILL.md",
 }
 FRONTMATTER = """---
-name: code-review
+name: evidence-code-review
 description: Review code changes for actionable defects with evidence-based findings and controlled false positives. Use when asked to review a diff, commit, branch, pull request, or working tree.
 ---
 """
@@ -44,15 +45,15 @@ def normalized_source(path: Path) -> str:
     text = path.read_text(encoding="utf-8").strip()
     text = text.replace(
         "Apply the checks in [review-criteria.md](review-criteria.md) according to the",
-        "Apply the checks in the Review Criteria section according to the",
+        "Apply the checks in [the review criteria](references/review-criteria.md) according to the",
     )
     text = text.replace(
         "Follow [output-contract.md](output-contract.md) for action level, viewpoint,",
-        "Follow the Review Output Contract section for action level, viewpoint,",
+        "Follow [the output contract](references/output-contract.md) for action level, viewpoint,",
     )
     text = text.replace(
         "[communication-guidelines.md](communication-guidelines.md) before returning the",
-        "Review Comment Communication Guidelines section before returning the",
+        "[the communication guidelines](references/communication-guidelines.md) before returning the",
     )
     return text
 
@@ -60,7 +61,9 @@ def normalized_source(path: Path) -> str:
 def render() -> str:
     sections = "\n\n---\n\n".join(normalized_source(path) for path in SOURCE_FILES)
     digest = hashlib.sha256(
-        b"\0".join(path.read_bytes() for path in SOURCE_FILES)
+        b"\0".join(
+            path.read_bytes() for path in (*SOURCE_FILES, *REFERENCE_FILES.values())
+        )
     ).hexdigest()
     return (
         FRONTMATTER

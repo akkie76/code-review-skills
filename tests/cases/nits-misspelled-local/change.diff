@@ -1,0 +1,10 @@
+diff --git a/parse.js b/parse.js
+index cd7624d..d2629bf 100644
+--- a/parse.js
++++ b/parse.js
+@@ -1,3 +1,4 @@
+ export function parse(body) {
+-  return JSON.parse(body);
++  const respnose = JSON.parse(body);
++  return respnose;
+ }

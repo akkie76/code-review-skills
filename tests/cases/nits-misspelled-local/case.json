@@ -1,0 +1,11 @@
+{
+  "id": "nits-misspelled-local",
+  "kind": "positive",
+  "requests": [{"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}],
+  "expectations": {
+    "must_report": ["The local variable name respnose is misspelled."],
+    "must_not_report": ["Treat the local typo as a merge-blocking defect."],
+    "prefixes": ["NITS(Naming)"],
+    "output": "findings"
+  }
+}

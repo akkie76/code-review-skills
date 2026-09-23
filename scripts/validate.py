@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGES = tuple(sorted((ROOT / "dist").glob("*/code-review/SKILL.md")))
+PACKAGES = tuple(sorted((ROOT / "dist").glob("*/evidence-code-review/SKILL.md")))
 EXPECTED_PACKAGES = 2
 
 
@@ -38,15 +38,30 @@ def main() -> int:
         for key in ("name", "description"):
             if not re.search(rf"^{key}:\s*\S", frontmatter, re.MULTILINE):
                 errors.append(f"missing {key} in frontmatter: {relative}")
-        for prefix in ("MUST(", "SHOULD(", "BETTER(", "NITS("):
-            if prefix not in text:
-                errors.append(f"missing review prefix {prefix}: {relative}")
-        if re.search(r"\[[^]]+\]\((?!https?://|#)[^)]+\)", text):
-            errors.append(f"package contains a non-self-contained relative link: {relative}")
+        name_match = re.search(r"^name:\s*(\S+)\s*$", frontmatter, re.MULTILINE)
+        if name_match and name_match.group(1) != package.parent.name:
+            errors.append(f"frontmatter name must match directory: {relative}")
+        description_match = re.search(
+            r"^description:\s*(.+)$", frontmatter, re.MULTILINE
+        )
+        if description_match and len(description_match.group(1)) > 1024:
+            errors.append(f"frontmatter description exceeds 1024 characters: {relative}")
+        for target in re.findall(r"\[[^]]+\]\((?!https?://|#)([^)]+)\)", text):
+            resolved = package.parent / target.split("#", 1)[0]
+            if not resolved.is_file():
+                errors.append(f"broken package link {target}: {relative}")
         local_home_prefix = "/" + "Users/"
         technology_guide = package.parent / "references/technologies/README.md"
         if not technology_guide.is_file():
             errors.append(f"package is missing technology guidance: {relative}")
+        output_contract = package.parent / "references/output-contract.md"
+        if not output_contract.is_file():
+            errors.append(f"package is missing output contract: {relative}")
+        else:
+            contract_text = output_contract.read_text(encoding="utf-8")
+            for prefix in ("MUST(", "SHOULD(", "BETTER(", "NITS("):
+                if prefix not in contract_text:
+                    errors.append(f"missing review prefix {prefix}: {relative}")
         for bundled_file in package.parent.rglob("*"):
             if bundled_file.is_file() and local_home_prefix in bundled_file.read_text(
                 encoding="utf-8"
@@ -55,6 +70,8 @@ def main() -> int:
                     "package contains a local source reference: "
                     f"{bundled_file.relative_to(ROOT)}"
                 )
+        if len(text.splitlines()) >= 500:
+            errors.append(f"SKILL.md must remain under 500 lines: {relative}")
 
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors))

@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -23,6 +26,8 @@ def main() -> int:
 
     kinds: set[str] = set()
     languages: set[str] = set()
+    observed_action_levels: set[str] = set()
+    observed_viewpoints: set[str] = set()
     for case_file in case_files:
         relative = case_file.relative_to(ROOT)
         try:
@@ -71,6 +76,11 @@ def main() -> int:
             for prefix in prefixes
         ):
             errors.append(f"invalid expected prefixes in {relative}")
+        else:
+            for prefix in prefixes:
+                action, viewpoint = prefix[:-1].split("(", 1)
+                observed_action_levels.add(action)
+                observed_viewpoints.add(viewpoint)
 
         patch = case_file.parent / "change.diff"
         if not patch.is_file() or not patch.read_text(encoding="utf-8").strip():
@@ -78,12 +88,40 @@ def main() -> int:
         repository = case_file.parent / "repository"
         if not repository.is_dir() or not any(path.is_file() for path in repository.rglob("*")):
             errors.append(f"missing repository context beside {relative}")
+        else:
+            with tempfile.TemporaryDirectory() as temporary:
+                checkout = Path(temporary) / "repository"
+                shutil.copytree(repository, checkout)
+                result = subprocess.run(
+                    ["git", "apply", "--check", str(patch.resolve())],
+                    cwd=checkout,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                if result.returncode:
+                    errors.append(
+                        f"change.diff does not apply beside {relative}: "
+                        f"{result.stderr.strip()}"
+                    )
 
     required_kinds = {"positive", "negative", "instruction-conflict"}
     if kinds != required_kinds:
         errors.append(f"case kinds must include {sorted(required_kinds)}")
     if not {"en", "ja"}.issubset(languages):
         errors.append("evaluation requests must cover both English and Japanese")
+    required_action_levels = {"MUST", "SHOULD", "BETTER", "NITS"}
+    if observed_action_levels != required_action_levels:
+        errors.append(
+            f"expected prefixes must cover action levels {sorted(required_action_levels)}"
+        )
+    required_viewpoints = {
+        "Design", "Simplicity", "Naming", "Style", "Functionality", "Test", "Document"
+    }
+    if observed_viewpoints != required_viewpoints:
+        errors.append(
+            f"expected prefixes must cover viewpoints {sorted(required_viewpoints)}"
+        )
 
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors))

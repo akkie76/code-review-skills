@@ -1,0 +1,12 @@
+diff --git a/access.js b/access.js
+index 2cac28f..143201e 100644
+--- a/access.js
++++ b/access.js
+@@ -1,3 +1,6 @@
+ export function availableActions(user) {
+-  return user ? ["view"] : [];
++  const actions = user ? ["view"] : [];
++  if (user?.active && user?.role === "admin") actions.push("edit");
++  if (user?.active && user?.role === "admin") actions.push("delete");
++  return actions;
+ }

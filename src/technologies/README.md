@@ -2,10 +2,15 @@
 
 [日本語](README.ja.md)
 
-Add the project information needed for accurate technology-specific reviews to
-this directory. The contents are intentionally not prescribed by Code Review
-Skills because the relevant languages, frameworks, SDKs, versions, tools, and
-constraints differ between projects.
+This directory explains what project information helps technology-specific
+reviews. Do not edit the installed copy to store project configuration: a
+Skill update may replace it, and a personal installation is shared by every
+project.
+
+Store the actual guidance in the reviewed repository, such as in `AGENTS.md`,
+`CLAUDE.md`, or a project document referenced by those instructions. The format
+is intentionally not prescribed because the relevant languages, frameworks,
+SDKs, versions, tools, and constraints differ between projects.
 
 Useful information may include:
 
@@ -19,7 +24,7 @@ Useful information may include:
 You may add Markdown guidance or link to authoritative project documentation.
 Do not copy private or third-party material without permission.
 
-Keep the guidance limited to information that changes how a review should be
+Keep project guidance limited to information that changes how a review should be
 investigated or judged. Repository instructions and verified project behavior
 take precedence over general technology guidance. If this directory contains
 no applicable information, the reviewer should investigate the repository and

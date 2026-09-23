@@ -39,3 +39,6 @@ the skill's evidence requirements; otherwise record it as a false positive.
 Use a dated local evaluation record while the project is private. Do not
 commit model transcripts when they contain machine paths, private repository
 content, or unpublished correspondence.
+
+Use [the manual evaluation record](RESULT_TEMPLATE.md) so product, model,
+revision, language, and unexpected output are recorded consistently.

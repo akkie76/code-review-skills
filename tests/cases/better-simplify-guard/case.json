@@ -1,0 +1,13 @@
+{
+  "id": "better-simplify-guard",
+  "kind": "positive",
+  "requests": [{"language": "en", "prompt": "Review the working tree changes."}],
+  "expectations": {
+    "must_report": [
+      "The repeated active-admin condition can be named once to make the policy easier to recognize; the current behavior remains correct."
+    ],
+    "must_not_report": ["Claim that the repeated condition changes behavior."],
+    "prefixes": ["BETTER(Simplicity)"],
+    "output": "findings"
+  }
+}

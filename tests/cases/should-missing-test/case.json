@@ -1,0 +1,16 @@
+{
+  "id": "should-missing-test",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The new timeout retry and exhaustion paths are not covered by the existing success-only test."
+    ],
+    "must_not_report": ["Demand a test for every changed line."],
+    "prefixes": ["SHOULD(Test)"],
+    "output": "findings"
+  }
+}

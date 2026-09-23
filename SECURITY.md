@@ -11,8 +11,9 @@ is considered for security fixes.
 
 Do not open a public Issue for a vulnerability. Use GitHub's private
 vulnerability reporting feature for this repository when it is enabled. If
-the feature is unavailable, wait for a private contact method to be published;
-do not disclose sensitive details publicly.
+the feature is unavailable, send [@akkiee76](https://x.com/akkiee76) a direct
+message requesting a secure contact method. Do not include vulnerability
+details in the message or disclose them publicly.
 
 Include the affected revision, impact, reproduction conditions, and the
 smallest safe proof of concept. Do not include credentials, personal data, or

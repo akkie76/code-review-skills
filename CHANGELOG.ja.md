@@ -18,5 +18,7 @@
 - オフラインで動作する生成、検証、リリース準備チェック
 - 全レビューコメントに付ける対応要否・レビュー観点のプレフィックス
 - 明確さと敬意を両立するレビューコメント記載ルール
+- 衝突しにくい`evidence-code-review` Skill名とpackage全体のインストール手順
+- 必要なレビュー資料の段階的読み込み、評価範囲拡充、CI、Git履歴全体の公開検査
 
 [未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0...HEAD

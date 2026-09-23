@@ -1,0 +1,7 @@
+diff --git a/message.js b/message.js
+index 9d0f533..521a4d1 100644
+--- a/message.js
++++ b/message.js
+@@ -1 +1,2 @@
+ export const savedMessage = "Saved.";
++export const deletedMessage = "Deleted";
