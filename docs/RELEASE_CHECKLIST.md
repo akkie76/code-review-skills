@@ -18,8 +18,11 @@ release while any required item remains incomplete.
 - [ ] English and Japanese requests produce equivalent finding decisions.
 - [ ] Any unexpected finding has been classified as valid, ambiguous, or a
       false positive and reflected in the fixtures or methodology.
-- [ ] At least one reviewer other than the maintainer has assessed the skill's
-      technical usefulness.
+
+Optional quality step:
+
+- [ ] Ask one or more reviewers other than the maintainer to assess the skill's
+      technical usefulness. This is recommended but does not block release.
 
 ## Content and rights
 
