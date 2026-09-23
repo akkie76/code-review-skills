@@ -12,11 +12,23 @@ ROOT = Path(__file__).resolve().parents[1]
 DISALLOWED_SUFFIXES = {".pdf", ".doc", ".docx", ".pages"}
 SECRET_PATTERNS = {
     "private key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-    "GitHub token": re.compile(r"\bgh[oprsu]_[A-Za-z0-9_]{30,}\b"),
+    "GitHub token": re.compile(
+        r"\b(?:gh[oprsu]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{20,})\b"
+    ),
     "OpenAI key": re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
     "Anthropic key": re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b"),
 }
-LOCAL_HOME_PATTERN = re.compile("/" + r"Users/[^/\s]+/")
+LOCAL_HOME_PATTERNS = {
+    "macOS": re.compile("/" + r"Users/[^/\s]+/"),
+    "Linux": re.compile("/" + r"home/[^/\s]+/"),
+    "Windows": re.compile(
+        r"\b[A-Za-z]:[\\/]+Users[\\/]+[^\\/\r\n]+[\\/]", re.IGNORECASE
+    ),
+}
+
+
+def contains_local_home_path(text: str) -> bool:
+    return any(pattern.search(text) for pattern in LOCAL_HOME_PATTERNS.values())
 
 
 def git(*args: str) -> str:
@@ -93,14 +105,14 @@ def main() -> int:
             text = absolute.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        if LOCAL_HOME_PATTERN.search(text):
+        if contains_local_home_path(text):
             errors.append(f"local absolute path in {path}")
         for name, pattern in SECRET_PATTERNS.items():
             if pattern.search(text):
                 errors.append(f"possible {name} in {path}")
 
     for oid, path, text in historical_blobs():
-        if LOCAL_HOME_PATTERN.search(text):
+        if contains_local_home_path(text):
             errors.append(f"local absolute path in Git history: {path} ({oid[:12]})")
         for name, pattern in SECRET_PATTERNS.items():
             if pattern.search(text):

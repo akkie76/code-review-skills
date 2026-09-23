@@ -14,8 +14,9 @@ Run:
 make test
 ```
 
-This verifies the generated packages and the structure and internal
-consistency of every evaluation case. It does not call an AI service.
+This verifies the generated packages, release safeguards, package cleanup,
+and the structure and internal consistency of every evaluation case. It does
+not call an AI service.
 
 ## Manual agent evaluation
 

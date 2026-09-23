@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import shutil
 from pathlib import Path
 
 
@@ -76,6 +77,8 @@ def render() -> str:
 
 def write_outputs(content: str) -> None:
     for target in TARGETS.values():
+        if target.parent.exists():
+            shutil.rmtree(target.parent)
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("w", encoding="utf-8", newline="\n") as output:
             output.write(content)
@@ -89,6 +92,18 @@ def write_outputs(content: str) -> None:
 def check_outputs(content: str) -> list[str]:
     errors: list[str] = []
     for agent, target in TARGETS.items():
+        expected_files = {Path("SKILL.md"), *REFERENCE_FILES}
+        if target.parent.exists():
+            actual_files = {
+                path.relative_to(target.parent)
+                for path in target.parent.rglob("*")
+                if path.is_file() or path.is_symlink()
+            }
+            for unexpected in sorted(actual_files - expected_files):
+                errors.append(
+                    "unexpected generated file for "
+                    f"{agent}: {(target.parent / unexpected).relative_to(ROOT)}"
+                )
         if not target.exists():
             errors.append(f"missing generated package for {agent}: {target.relative_to(ROOT)}")
         elif target.read_text(encoding="utf-8") != content:
