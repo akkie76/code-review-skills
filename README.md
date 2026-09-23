@@ -16,10 +16,15 @@ style-only comments and unsupported speculation.
 - Checks correctness, interfaces, design, security, reliability, tests, and
   documentation according to risk.
 - Requires a concrete trigger and impact for every finding.
+- Prefixes each comment with its action level and viewpoint, such as
+  `MUST(Functionality):` or `BETTER(Simplicity):`.
 - Produces prioritized findings in English or Japanese.
 
 The skill reviews code; it does not modify the reviewed code unless the user
 separately asks for changes.
+
+See the [review comment convention](docs/REVIEW_COMMENTS.md) for action levels,
+viewpoints, and communication rules.
 
 ## Install
 

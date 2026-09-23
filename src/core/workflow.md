@@ -109,5 +109,8 @@ Do not report:
 
 ## 7. Produce the review
 
-Follow [output-contract.md](output-contract.md) for priority, finding content,
-language selection, and the final response structure.
+Follow [output-contract.md](output-contract.md) for action level, viewpoint,
+comment content, language selection, and final response structure. Apply the
+communication checks in
+[communication-guidelines.md](communication-guidelines.md) before returning the
+review.

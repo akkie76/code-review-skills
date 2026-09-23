@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "tests/cases"
-REQUIRED_EXPECTATIONS = {"must_report", "must_not_report", "output"}
+REQUIRED_EXPECTATIONS = {"must_report", "must_not_report", "prefixes", "output"}
 VALID_RESULTS = {"findings", "no_findings"}
 
 
@@ -60,6 +61,16 @@ def main() -> int:
             errors.append(f"missing expectations {sorted(missing)}: {relative}")
         if expectations.get("output") not in VALID_RESULTS:
             errors.append(f"invalid expected output in {relative}")
+        prefixes = expectations.get("prefixes")
+        if not isinstance(prefixes, list) or not all(
+            isinstance(prefix, str)
+            and re.fullmatch(
+                r"(?:MUST|SHOULD|BETTER|NITS)\((?:Design|Simplicity|Naming|Style|Functionality|Test|Document)\)",
+                prefix,
+            )
+            for prefix in prefixes
+        ):
+            errors.append(f"invalid expected prefixes in {relative}")
 
         patch = case_file.parent / "change.diff"
         if not patch.is_file() or not patch.read_text(encoding="utf-8").strip():

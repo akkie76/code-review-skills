@@ -13,6 +13,7 @@ SOURCE_FILES = (
     ROOT / "src/core/workflow.md",
     ROOT / "src/core/review-criteria.md",
     ROOT / "src/core/output-contract.md",
+    ROOT / "src/core/communication-guidelines.md",
 )
 REFERENCE_FILES = {
     Path("references/technologies/README.md"): ROOT / "src/technologies/README.md",
@@ -46,8 +47,12 @@ def normalized_source(path: Path) -> str:
         "Apply the checks in the Review Criteria section according to the",
     )
     text = text.replace(
-        "Follow [output-contract.md](output-contract.md) for priority, finding content,",
-        "Follow the Review Output Contract section for priority, finding content,",
+        "Follow [output-contract.md](output-contract.md) for action level, viewpoint,",
+        "Follow the Review Output Contract section for action level, viewpoint,",
+    )
+    text = text.replace(
+        "[communication-guidelines.md](communication-guidelines.md) before returning the",
+        "Review Comment Communication Guidelines section before returning the",
     )
     return text
 

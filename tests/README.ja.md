@@ -26,9 +26,9 @@ CodexとClaude Codeの両方で、caseごとに次を実施します。
 5. `expectations`の全項目を満たすか記録する。文章ではなく挙動と根拠を比較する
 6. 他のfixtureのcontextを避けるため、新しい会話で次のcaseを評価する
 
-`must_report`、`must_not_report`、`output`のすべてを満たした場合だけ合格です。追加の
-findingはSkillの根拠要件を独立して満たす必要があり、満たさない場合は誤検知として
-記録します。
+`must_report`、`must_not_report`、`prefixes`、`output`のすべてを満たした場合だけ
+合格です。追加のfindingはSkillの根拠要件を独立して満たす必要があり、満たさない
+場合は誤検知として記録します。
 
 非公開期間中は、日付入りの評価記録をリポジトリ外で管理します。端末固有のパス、
 非公開リポジトリの内容、未公開のやり取りを含むmodel transcriptはコミットしません。

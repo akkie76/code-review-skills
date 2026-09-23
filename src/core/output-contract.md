@@ -1,6 +1,6 @@
 # Review Output Contract
 
-Apply this contract after investigating and validating candidate findings. It
+Apply this contract after investigating and validating candidate comments. It
 defines how to communicate review results; it does not lower the evidence
 required to report them.
 
@@ -11,118 +11,150 @@ does not specify a language, follow authoritative repository instructions. If
 neither specifies a language, use the language of the user's review request.
 
 Keep source identifiers, API names, command names, paths, and error messages in
-their original form unless translating them is necessary for comprehension.
-Do not produce duplicate English and Japanese reviews unless the user requests
-both.
+their original form unless translating them is necessary for comprehension. Do
+not produce duplicate English and Japanese reviews unless requested.
 
-## Assign priority
+## Assign the action level
 
-Priority represents the urgency of correcting a demonstrated defect. It is not
-a measure of reviewer confidence, code complexity, or the amount of work
-needed to fix it.
+Every review comment starts with one of these action levels. The level tells the
+author what response is expected; it is not reviewer confidence or fix effort.
 
-### P0 - Critical
+### MUST
 
-Use P0 only when the change creates an immediate, broadly damaging condition
-that requires stopping deployment or operation. Examples include active data
-loss, a broadly exploitable security failure, or a system-wide outage on the
-normal path.
+Use `MUST` when the change has a demonstrated defect, security failure,
+contract violation, data-integrity risk, or other problem that must be resolved
+before merge. State the failing behavior and why merge should be blocked.
 
-P0 findings block merge and usually require incident-level attention. Do not
-use P0 for a serious defect with narrow or unlikely preconditions.
+Do not use `MUST` for personal preferences, uncertain concerns, or an optional
+design alternative. Ask a question when missing context prevents proving the
+problem.
 
-### P1 - High
+### SHOULD
 
-Use P1 for a clear defect on a realistic path that can cause substantial user,
-security, financial, data-integrity, or availability impact.
+Use `SHOULD` when a concrete quality, maintainability, verification, or
+operational risk should normally be resolved, but the team can consciously
+defer it without making the current change incorrect. Explain the cost of
+deferral. When deferring, recommend recording the follow-up rather than leaving
+the outcome implicit.
 
-P1 findings block merge. The triggering conditions may be narrower than P0,
-but they must be plausible in the system's intended use.
+### BETTER
 
-### P2 - Medium
+Use `BETTER` for an optional alternative that provides a specific, explainable
+benefit. Make clear that the current implementation can still be accepted. Do
+not present subjective taste as an improvement.
 
-Use P2 for a reproducible defect whose impact is limited in scope, recoverable,
-or dependent on less common conditions. This includes violations of an
-established contract that are likely to become user-visible or operationally
-costly.
+### NITS
 
-P2 findings should normally be corrected before merge. A team may consciously
-defer one when the risk and follow-up are recorded.
+Use `NITS` for a minor, non-blocking correction such as a typo, misleading
+local wording, or a clearly established convention that automation does not
+cover. Use it sparingly. Do not report formatter output or manufacture trivial
+comments to make the review appear complete.
 
-### P3 - Low
+## Select the review viewpoint
 
-Use P3 for a concrete, low-impact defect or maintainability problem that has a
-demonstrable future cost. The issue must still be actionable and caused by the
-change.
+Choose the single viewpoint that best explains why the comment matters:
 
-P3 findings are non-blocking. Do not use P3 as a container for preferences,
-optional refactoring, praise, questions, or formatter output.
-
-## Categorize the finding
-
-Choose the single category that best describes the primary failure:
-
-- `Correctness`: behavior, state, error handling, or contract failures.
-- `Interface`: integration, compatibility, schema, or data-flow failures.
-- `Design`: architecture, responsibility, dependency, or testability failures.
-- `Clarity`: misleading names or structure with a demonstrated maintenance
-  risk.
-- `Security`: confidentiality, integrity, authorization, validation, or trust
-  boundary failures.
-- `Reliability`: performance, concurrency, resource, recovery, or availability
-  failures.
+- `Design`: architecture, responsibility, dependency direction, ownership, or
+  abstraction boundaries.
+- `Simplicity`: unnecessary complexity or control flow that creates a concrete
+  comprehension or maintenance cost.
+- `Naming`: an identifier that misstates behavior, units, ownership,
+  cardinality, or side effects.
+- `Style`: an established project convention whose violation has a concrete
+  cost and is not already enforced automatically.
+- `Functionality`: correctness, interfaces, data flow, performance,
+  reliability, security, privacy, or operational behavior.
 - `Test`: missing or invalid verification that permits a specific regression.
-- `Documentation`: user, API, setup, migration, or operational guidance that
-  is incorrect or materially incomplete.
+- `Document`: user, API, setup, migration, comment, or operational guidance
+  that is incorrect or materially incomplete.
 
-Do not create duplicate findings under multiple categories. Select the root
-cause and describe the downstream impact in the body.
+Do not duplicate one root cause under several viewpoints. Mention secondary
+effects in the body and keep the prefix focused on the primary concern.
 
-## Write each finding
+## Format each review comment
 
-Each finding must contain:
+Use this exact title prefix:
 
-1. **Title**: `[P#][Category]` followed by a concise description of the defect.
-2. **Location**: the smallest changed line range that demonstrates the issue.
+```text
+ACTION(Viewpoint): concise description
+```
+
+For example:
+
+```text
+MUST(Functionality): Advance the page before requesting the next result set
+SHOULD(Test): Cover the failure branch that preserves the previous state
+BETTER(Simplicity): Extract the repeated guard to make the exit condition clear
+NITS(Naming): Correct the misspelled configuration key
+```
+
+Each actionable comment must contain:
+
+1. **Location**: the smallest changed line range that demonstrates the issue.
+2. **Evidence**: the relevant observed behavior or contract.
 3. **Trigger**: the input, state, timing, environment, or caller behavior that
    exposes it.
 4. **Impact**: the incorrect outcome and who or what is affected.
-5. **Direction**: enough remediation guidance to make the requested action
-   clear without prescribing an unnecessarily large redesign.
+5. **Direction**: the expected outcome or a proportionate remediation
+   direction without prescribing an unnecessarily large redesign.
 
-The body should be one compact paragraph whenever possible. Connect the
-location to the trigger and impact rather than restating the code. Use a
-question instead of a finding when missing context prevents establishing that
-the behavior is defective.
+The body should normally be one compact paragraph. Connect evidence to trigger
+and impact rather than restating the code.
+
+## Communicate constructively
+
+- Comment on the code and its observable behavior, never the author's ability,
+  effort, or intent.
+- Use respectful, neutral language. Avoid blame, sarcasm, commands without
+  reasons, and claims such as "obviously" or "always" that the evidence does
+  not establish.
+- Explain why the issue matters and what acceptable outcome is expected. A
+  bare demand is not an actionable review comment.
+- Separate observed facts from assumptions. When the author's intent or an
+  external contract is unknown, ask a concise question instead of disguising
+  uncertainty as a finding.
+- State optionality honestly. `BETTER` and `NITS` must not read like mandatory
+  requests; `MUST` must not be softened until its required action is unclear.
+- Prefer project rules and team consistency over personal preference.
+- Offer a focused direction or small example when it reduces ambiguity, but do
+  not rewrite the implementation in the comment.
+- Keep one root cause per comment and avoid repeating the same request at
+  multiple locations.
+- If text discussion depends on unresolved product or design context, identify
+  the decision that needs clarification instead of prolonging speculation.
+
+Positive feedback can be included when it is specific and useful, but it does
+not use an action-level prefix and must not obscure actionable comments.
 
 ## Structure the final response
 
 Use this order:
 
-1. Findings, ordered from P0 to P3 and then by file location.
+1. Review comments ordered by `MUST`, `SHOULD`, `BETTER`, and `NITS`, then by
+   file location.
 2. Open questions that materially affect the review, if any.
 3. A short summary and verification gaps, when useful.
 
-Do not add a findings table when inline findings or the review platform's
-native annotation format is clearer.
+Do not add a table when inline comments or the review platform's native
+annotation format is clearer.
 
-When no actionable finding exists, state that explicitly. Do not invent a low
-priority comment to make the review appear complete. Mention tests not run or
-areas not verified only when the omission materially limits confidence.
+When no actionable comment exists, state that explicitly. Do not invent a
+`BETTER` or `NITS` comment. Mention tests not run or areas not verified only
+when the omission materially limits confidence.
 
 ## Examples
 
 English title:
 
 ```text
-[P1][Security] Enforce resource ownership before returning the record
+MUST(Functionality): Verify resource ownership before returning the record
 ```
 
 Japanese title:
 
 ```text
-[P1][Security] レコードを返す前に所有権を検証する
+MUST(Functionality): レコードを返す前にリソースの所有権を検証する
 ```
 
-The category identifier remains stable across languages so that tooling and
-evaluation fixtures can compare output consistently.
+The action level and viewpoint remain stable across languages so that tooling
+and evaluation fixtures can compare output consistently.

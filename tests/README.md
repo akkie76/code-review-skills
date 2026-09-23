@@ -32,9 +32,9 @@ Run each case separately with both Codex and Claude Code:
 6. Repeat the case in a fresh conversation to avoid context from another
    fixture.
 
-An evaluation passes only when all `must_report`, `must_not_report`, and
-`output` expectations hold. Any additional finding must independently meet the
-skill's evidence requirements; otherwise record it as a false positive.
+An evaluation passes only when all `must_report`, `must_not_report`, `prefixes`,
+and `output` expectations hold. Any additional finding must independently meet
+the skill's evidence requirements; otherwise record it as a false positive.
 
 Use a dated local evaluation record while the project is private. Do not
 commit model transcripts when they contain machine paths, private repository

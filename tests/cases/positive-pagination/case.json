@@ -13,6 +13,7 @@
       "Pure style or naming preferences.",
       "A claim that maxPages itself is necessarily too large."
     ],
+    "prefixes": ["MUST(Functionality)"],
     "output": "findings"
   }
 }

@@ -11,6 +11,7 @@
       "The fallback changes valid falsy strings; an empty string is explicitly treated as absent by the contract.",
       "A preference to use a conditional expression instead of the nullish coalescing operator."
     ],
+    "prefixes": [],
     "output": "no_findings"
   }
 }

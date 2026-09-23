@@ -17,5 +17,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Behavioral fixtures for defect detection, false-positive control, and
   instruction boundaries.
 - Offline build, validation, and release-readiness checks.
+- Action-level and review-viewpoint prefixes for every review comment.
+- Constructive comment-writing rules that preserve clarity and respect.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0...HEAD

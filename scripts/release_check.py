@@ -72,6 +72,8 @@ def main() -> int:
         "docs/DEVELOPMENT.ja.md",
         "docs/RELEASE_CHECKLIST.md",
         "docs/RELEASE_CHECKLIST.ja.md",
+        "docs/REVIEW_COMMENTS.md",
+        "docs/REVIEW_COMMENTS.ja.md",
         "docs/releases/v0.1.0.md",
         "docs/releases/v0.1.0.ja.md",
         "tests/README.md",

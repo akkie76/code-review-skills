@@ -38,6 +38,9 @@ def main() -> int:
         for key in ("name", "description"):
             if not re.search(rf"^{key}:\s*\S", frontmatter, re.MULTILINE):
                 errors.append(f"missing {key} in frontmatter: {relative}")
+        for prefix in ("MUST(", "SHOULD(", "BETTER(", "NITS("):
+            if prefix not in text:
+                errors.append(f"missing review prefix {prefix}: {relative}")
         if re.search(r"\[[^]]+\]\((?!https?://|#)[^)]+\)", text):
             errors.append(f"package contains a non-self-contained relative link: {relative}")
         local_home_prefix = "/" + "Users/"
