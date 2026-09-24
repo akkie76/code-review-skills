@@ -23,5 +23,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   installation instructions.
 - Progressive loading of focused review references, expanded evaluation
   coverage, CI, and complete-history release checks.
+- Explicit tracing of existing callers and consumers when a shared contract
+  changes, including disclosure when complete enumeration is not possible.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0...HEAD

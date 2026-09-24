@@ -1,0 +1,24 @@
+diff --git a/audit.js b/audit.js
+new file mode 100644
+index 0000000..6b7a100
+--- /dev/null
++++ b/audit.js
+@@ -0,0 +1,5 @@
++import { normalizeItems } from "./normalize.js";
++
++export function auditSummary(records) {
++  return normalizeItems(records);
++}
+diff --git a/normalize.js b/normalize.js
+index a6ab00a..1745bf1 100644
+--- a/normalize.js
++++ b/normalize.js
+@@ -1,3 +1,7 @@
+ export function normalizeItems(items) {
+-  return items.filter(Boolean);
++  const normalized = items.filter(Boolean);
++  return {
++    items: normalized,
++    removed: items.length - normalized.length,
++  };
+ }

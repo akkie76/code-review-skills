@@ -52,13 +52,23 @@ documentation determine actual behavior.
 Do not limit investigation to modified lines. For each meaningful change:
 
 1. Find callers and consumers.
-2. Follow inputs through transformations and persistence boundaries.
-3. Follow outputs, errors, and side effects to their consumers.
-4. Inspect contracts implemented or relied on by the changed code.
-5. Check lifecycle, concurrency, retry, cancellation, and cleanup behavior
+2. When a shared function, component, interface, type, or data structure changes
+   its contract, search for all statically discoverable existing callers and
+   consumers, not only call sites added or modified by the change. Check each
+   relevant usage against the changed inputs, outputs, errors, state, and side
+   effects.
+3. Follow inputs through transformations and persistence boundaries.
+4. Follow outputs, errors, and side effects to their consumers.
+5. Inspect contracts implemented or relied on by the changed code.
+6. Check lifecycle, concurrency, retry, cancellation, and cleanup behavior
    when applicable.
-6. Compare nearby implementations when they represent the project's current
+7. Compare nearby implementations when they represent the project's current
    convention.
+
+Do not claim that caller or consumer coverage is exhaustive when dynamic
+dispatch, generated code, external consumers, or repository boundaries prevent
+complete enumeration. State the limitation and review the discoverable usages
+that carry the greatest impact.
 
 Use the smallest amount of surrounding code needed to establish whether a
 candidate issue is real. Avoid unrelated repository-wide critique.
