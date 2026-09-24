@@ -23,4 +23,4 @@
 - 共有契約の変更時に既存の呼び出し元・利用箇所を追跡し、完全な列挙ができない
   場合はその制約を明示するルール
 
-[未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0...HEAD
+[未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
