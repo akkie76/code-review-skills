@@ -20,5 +20,7 @@
 - 明確さと敬意を両立するレビューコメント記載ルール
 - 衝突しにくい`evidence-code-review` Skill名とpackage全体のインストール手順
 - 必要なレビュー資料の段階的読み込み、評価範囲拡充、CI、Git履歴全体の公開検査
+- 共有契約の変更時に既存の呼び出し元・利用箇所を追跡し、完全な列挙ができない
+  場合はその制約を明示するルール
 
-[未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0...HEAD
+[未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD

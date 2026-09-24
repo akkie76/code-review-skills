@@ -28,6 +28,8 @@ boundaries.
 
 Check for:
 
+- Existing callers or consumers that were not changed but no longer satisfy a
+  modified shared contract. Search beyond newly added or edited call sites.
 - Callers that no longer satisfy a changed precondition.
 - Consumers that cannot handle a new return value, error, or state.
 - Schema, serialization, migration, or versioning mismatches.

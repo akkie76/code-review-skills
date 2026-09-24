@@ -1,0 +1,19 @@
+{
+  "id": "must-existing-consumer",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The unchanged reportCount caller still reads .length directly from normalizeItems, but the changed shared function now returns an object, so reportCount returns undefined instead of a count."
+    ],
+    "must_not_report": [
+      "Only review the newly added auditSummary caller and miss the unchanged existing consumer.",
+      "Require a technology-specific rule to trace this statically discoverable caller."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}
