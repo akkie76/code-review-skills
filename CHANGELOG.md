@@ -27,5 +27,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   changes, including disclosure when complete enumeration is not possible.
 - Cross-variant tracing for unconditional effects inside shared dispatch
   handlers, with regression fixtures for variant safety and ineffective tests.
+- Direct verification of every cited supporting fact, including precedents,
+  nearby patterns, unchanged behavior, and specific source locations.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD

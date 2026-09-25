@@ -11,7 +11,7 @@ Review the requested code change with the shared workflow below. Use the
 repository's available file, search, diff, and test tools to gather evidence.
 Do not modify the reviewed code unless the user separately asks for changes.
 
-<!-- source-sha256: 597c597fcc268f0b8ec939867ce855e8749bc07291629beab0e6e2b49ecdd034 -->
+<!-- source-sha256: 224df6e5a759e9bffa8a806012d732f7fd81750968f7fd9ea07880c329cfc888 -->
 
 # Review Workflow
 
@@ -120,6 +120,14 @@ Before reporting an issue, answer all of the following:
 - Does surrounding code, configuration, or a framework guarantee invalidate
   the concern?
 - Can the claim be tied to a small, relevant line range?
+
+Validate every factual claim in the proposed finding, not only the minimum
+claim needed to prove the defect. If the finding cites an existing precedent,
+nearby pattern, unchanged behavior, caller count, contract, or specific
+location as supporting evidence, read that exact source and confirm that it
+states or implements what the finding attributes to it. Do not infer a cited
+fact from a similar pattern elsewhere. Remove unverified supporting detail even
+when the core conclusion remains correct.
 
 Investigate uncertain claims. Run focused tests or static checks when they can
 confirm behavior without causing out-of-scope changes. If a claim remains
