@@ -1,0 +1,10 @@
+diff --git a/handler.js b/handler.js
+index f700e72..6939880 100644
+--- a/handler.js
++++ b/handler.js
+@@ -1,4 +1,5 @@
+ export function route(event, session, send) {
++  session.authorized = true;
+   switch (event.kind) {
+     case "member":
+       return send(event);

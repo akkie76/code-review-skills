@@ -57,18 +57,28 @@ Do not limit investigation to modified lines. For each meaningful change:
    consumers, not only call sites added or modified by the change. Check each
    relevant usage against the changed inputs, outputs, errors, state, and side
    effects.
-3. Follow inputs through transformations and persistence boundaries.
-4. Follow outputs, errors, and side effects to their consumers.
-5. Inspect contracts implemented or relied on by the changed code.
-6. Check lifecycle, concurrency, retry, cancellation, and cleanup behavior
+3. When one shared handler dispatches over enum cases, sum-type variants,
+   subtypes, or modes, enumerate the statically discoverable variants that use
+   that path. Treat an unconditional mutation or side effect before or after
+   dispatch as applying to every variant, including unchanged variants. Check
+   whether it changes a per-variant guarantee, pre-satisfies or bypasses a
+   downstream guard, or exposes behavior intended for only one variant.
+4. Follow inputs through transformations and persistence boundaries.
+5. Follow outputs, errors, and side effects to their consumers.
+6. Inspect contracts implemented or relied on by the changed code.
+7. Check lifecycle, concurrency, retry, cancellation, and cleanup behavior
    when applicable.
-7. Compare nearby implementations when they represent the project's current
+8. Compare nearby implementations when they represent the project's current
    convention.
 
 Do not claim that caller or consumer coverage is exhaustive when dynamic
 dispatch, generated code, external consumers, or repository boundaries prevent
 complete enumeration. State the limitation and review the discoverable usages
 that carry the greatest impact.
+
+Do not manufacture a cross-caller or cross-variant finding merely because a
+shared path exists. Report one only when the change demonstrably alters an
+existing usage or variant guarantee.
 
 Use the smallest amount of surrounding code needed to establish whether a
 candidate issue is real. Avoid unrelated repository-wide critique.

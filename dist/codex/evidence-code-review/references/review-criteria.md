@@ -30,6 +30,11 @@ Check for:
 
 - Existing callers or consumers that were not changed but no longer satisfy a
   modified shared contract. Search beyond newly added or edited call sites.
+- Unchanged enum cases, sum-type variants, subtypes, or modes whose guarantees
+  are altered by an unconditional mutation or side effect in a shared handler.
+- Downstream validation, authorization, deduplication, or safety checks that a
+  new upstream effect now pre-satisfies or bypasses for variants it was not
+  intended to change.
 - Callers that no longer satisfy a changed precondition.
 - Consumers that cannot handle a new return value, error, or state.
 - Schema, serialization, migration, or versioning mismatches.

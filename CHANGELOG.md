@@ -25,5 +25,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   coverage, CI, and complete-history release checks.
 - Explicit tracing of existing callers and consumers when a shared contract
   changes, including disclosure when complete enumeration is not possible.
+- Cross-variant tracing for unconditional effects inside shared dispatch
+  handlers, with regression fixtures for variant safety and ineffective tests.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
