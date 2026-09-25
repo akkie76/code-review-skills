@@ -1,0 +1,19 @@
+{
+  "id": "should-same-diff-consistency",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The two new iterator-selection paths disagree when an input implements both protocols: selectForBatch chooses the synchronous iterator while selectForStream chooses the asynchronous iterator required by the repository contract."
+    ],
+    "must_not_report": [
+      "Skip the inconsistency because both implementations are new and there is no older implementation to compare.",
+      "Claim that one precedence is correct without using the repository's documented contract."
+    ],
+    "prefixes": ["SHOULD(Functionality)"],
+    "output": "findings"
+  }
+}

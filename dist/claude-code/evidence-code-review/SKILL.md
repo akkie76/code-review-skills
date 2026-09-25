@@ -11,7 +11,7 @@ Review the requested code change with the shared workflow below. Use the
 repository's available file, search, diff, and test tools to gather evidence.
 Do not modify the reviewed code unless the user separately asks for changes.
 
-<!-- source-sha256: 224df6e5a759e9bffa8a806012d732f7fd81750968f7fd9ea07880c329cfc888 -->
+<!-- source-sha256: 07ce59a0c0f093012e2ec35fcf67e41437536fb8a2c0ce142a99701ba71abf7f -->
 
 # Review Workflow
 
@@ -58,6 +58,19 @@ yourself:
   changed alongside the implementation.
 - Files that look related but are absent from the change.
 
+Partition the diff into distinct, independently reviewable concerns before
+starting the detailed review. A concern is one coherent behavior, invariant,
+refactor, fix, migration, or operational change; it may span files, and one
+file may contain several concerns. Record which files or hunks belong to each
+concern and any interactions between concerns.
+
+Review every identified concern through the tracing, risk, validation, and
+false-positive steps below as if it were the only change under review. Depth
+spent on one feature or refactor does not substitute for reviewing an
+unrelated fix bundled into the same diff. Use the concern map as a coverage
+check before producing the final response. Do not manufacture findings for a
+large but coherent single-concern change.
+
 Separate observed facts from assumptions. Use commit or pull-request context
 as supporting evidence, but let the code and authoritative project
 documentation determine actual behavior.
@@ -83,8 +96,13 @@ Do not limit investigation to modified lines. For each meaningful change:
 6. Inspect contracts implemented or relied on by the changed code.
 7. Check lifecycle, concurrency, retry, cancellation, and cleanup behavior
    when applicable.
-8. Compare nearby implementations when they represent the project's current
-   convention.
+8. Compare conceptually equivalent operations that the diff adds or modifies,
+   even when both implementations are new and no repository convention exists
+   yet. Check that parallel paths agree on selection precedence, validation,
+   normalization, error mapping, state transitions, and response construction,
+   unless an inspected contract explains the difference.
+9. Compare nearby existing implementations when they represent the project's
+   current convention.
 
 Do not claim that caller or consumer coverage is exhaustive when dynamic
 dispatch, generated code, external consumers, or repository boundaries prevent
