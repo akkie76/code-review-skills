@@ -13,8 +13,9 @@ new file mode 100644
 index 0000000..b9ca8b9
 --- /dev/null
 +++ b/flags.test.js
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,9 @@
 +import assert from "node:assert/strict";
++import {test} from "node:test";
 +import {FeatureFlags} from "./flags.js";
 +
 +test("primary is enabled", () => {
