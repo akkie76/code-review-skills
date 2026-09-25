@@ -58,8 +58,6 @@ Check for:
 - New extension points that require repeated modification of unrelated code.
 - Duplicate sources of truth or inconsistent implementations of the same
   policy.
-- An independent concern bundled into the diff that was not traced and
-  validated to the same depth as the change's primary concern.
 - Abstractions that hide important behavior, or fragmentation that makes a
   single operation unnecessarily difficult to follow.
 

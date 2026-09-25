@@ -50,11 +50,11 @@ file may contain several concerns. Record which files or hunks belong to each
 concern and any interactions between concerns.
 
 Review every identified concern through the tracing, risk, validation, and
-false-positive steps below as if it were the only change under review. Depth
-spent on one feature or refactor does not substitute for reviewing an
-unrelated fix bundled into the same diff. Use the concern map as a coverage
-check before producing the final response. Do not manufacture findings for a
-large but coherent single-concern change.
+false-positive steps below at sufficient depth, then examine relevant
+interactions between concerns. Depth spent on one feature or refactor does not
+substitute for reviewing an unrelated fix bundled into the same diff. Use the
+concern map as a coverage check before producing the final response. Do not
+manufacture findings for a large but coherent single-concern change.
 
 Separate observed facts from assumptions. Use commit or pull-request context
 as supporting evidence, but let the code and authoritative project
@@ -62,7 +62,8 @@ documentation determine actual behavior.
 
 ## 3. Trace affected behavior
 
-Do not limit investigation to modified lines. For each meaningful change:
+Do not limit investigation to modified lines. For each identified concern and
+relevant interaction:
 
 1. Find callers and consumers.
 2. When a shared function, component, interface, type, or data structure changes
