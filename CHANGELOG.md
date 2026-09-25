@@ -29,5 +29,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   handlers, with regression fixtures for variant safety and ineffective tests.
 - Direct verification of every cited supporting fact, including precedents,
   nearby patterns, unchanged behavior, and specific source locations.
+- Per-concern review coverage for bundled changes and same-diff consistency
+  checks for conceptually equivalent implementations.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD

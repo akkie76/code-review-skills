@@ -1,0 +1,21 @@
+diff --git a/iterators.js b/iterators.js
+new file mode 100644
+index 0000000..e61138d
+--- /dev/null
++++ b/iterators.js
+@@ -0,0 +1,15 @@
++export function selectForBatch(input) {
++  return input[Symbol.iterator] === undefined
++    ? input[Symbol.asyncIterator]()
++    : input[Symbol.iterator]();
++}
++
++export function selectForStream(input) {
++  return input[Symbol.asyncIterator] === undefined
++    ? input[Symbol.iterator]()
++    : input[Symbol.asyncIterator]();
++}
++
++export function supportsIteration(input) {
++  return Symbol.iterator in input || Symbol.asyncIterator in input;
++}

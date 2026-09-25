@@ -35,6 +35,9 @@ Check for:
 - Downstream validation, authorization, deduplication, or safety checks that a
   new upstream effect now pre-satisfies or bypasses for variants it was not
   intended to change.
+- Conceptually equivalent paths added or modified in the same diff that apply
+  conflicting precedence, validation, normalization, error, state, or response
+  semantics without an inspected contract justifying the difference.
 - Callers that no longer satisfy a changed precondition.
 - Consumers that cannot handle a new return value, error, or state.
 - Schema, serialization, migration, or versioning mismatches.

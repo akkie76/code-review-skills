@@ -1,0 +1,34 @@
+diff --git a/limits.js b/limits.js
+index 5d146df..0ba7f42 100644
+--- a/limits.js
++++ b/limits.js
+@@ -1,4 +1,5 @@
+ export function validateLimit(value) {
+   if (!Number.isInteger(value)) throw new TypeError("limit must be an integer");
++  if (value < 1 && value > 100) throw new RangeError("limit must be 1 through 100");
+   return value;
+ }
+diff --git a/profile.js b/profile.js
+index 5ad78a7..463c755 100644
+--- a/profile.js
++++ b/profile.js
+@@ -1,3 +1,7 @@
+ export function displayName(profile) {
+-  return profile.name;
++  const name = profile.name.trim();
++  if (profile.nickname) {
++    return `${name} (${profile.nickname.trim()})`;
++  }
++  return name;
+ }
+diff --git a/status.js b/status.js
+index 4ea2c4c..1306272 100644
+--- a/status.js
++++ b/status.js
+@@ -1,3 +1,5 @@
++export const ACTIVE_STATUS = "active";
++
+ export function isActive(record) {
+-  return record.status === "active";
++  return record.status === ACTIVE_STATUS;
+ }

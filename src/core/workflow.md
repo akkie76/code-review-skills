@@ -43,13 +43,27 @@ yourself:
   changed alongside the implementation.
 - Files that look related but are absent from the change.
 
+Partition the diff into distinct, independently reviewable concerns before
+starting the detailed review. A concern is one coherent behavior, invariant,
+refactor, fix, migration, or operational change; it may span files, and one
+file may contain several concerns. Record which files or hunks belong to each
+concern and any interactions between concerns.
+
+Review every identified concern through the tracing, risk, validation, and
+false-positive steps below at sufficient depth, then examine relevant
+interactions between concerns. Depth spent on one feature or refactor does not
+substitute for reviewing an unrelated fix bundled into the same diff. Use the
+concern map as a coverage check before producing the final response. Do not
+manufacture findings for a large but coherent single-concern change.
+
 Separate observed facts from assumptions. Use commit or pull-request context
 as supporting evidence, but let the code and authoritative project
 documentation determine actual behavior.
 
 ## 3. Trace affected behavior
 
-Do not limit investigation to modified lines. For each meaningful change:
+Do not limit investigation to modified lines. For each identified concern and
+relevant interaction:
 
 1. Find callers and consumers.
 2. When a shared function, component, interface, type, or data structure changes
@@ -68,8 +82,13 @@ Do not limit investigation to modified lines. For each meaningful change:
 6. Inspect contracts implemented or relied on by the changed code.
 7. Check lifecycle, concurrency, retry, cancellation, and cleanup behavior
    when applicable.
-8. Compare nearby implementations when they represent the project's current
-   convention.
+8. Compare conceptually equivalent operations that the diff adds or modifies,
+   even when both implementations are new and no repository convention exists
+   yet. Check that parallel paths agree on selection precedence, validation,
+   normalization, error mapping, state transitions, and response construction,
+   unless an inspected contract explains the difference.
+9. Compare nearby existing implementations when they represent the project's
+   current convention.
 
 Do not claim that caller or consumer coverage is exhaustive when dynamic
 dispatch, generated code, external consumers, or repository boundaries prevent

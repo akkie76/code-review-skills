@@ -1,0 +1,19 @@
+{
+  "id": "must-multi-concern-depth",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The independent limit-validation concern uses an impossible value < 1 && value > 100 condition, so every out-of-range integer is accepted despite the documented 1 through 100 contract."
+    ],
+    "must_not_report": [
+      "Review only the name-formatting feature and status refactor while overlooking the separate validation change.",
+      "Manufacture a finding in either of the two correct concerns to make the review appear balanced."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}
