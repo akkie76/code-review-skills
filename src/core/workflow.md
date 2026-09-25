@@ -106,6 +106,14 @@ Before reporting an issue, answer all of the following:
   the concern?
 - Can the claim be tied to a small, relevant line range?
 
+Validate every factual claim in the proposed finding, not only the minimum
+claim needed to prove the defect. If the finding cites an existing precedent,
+nearby pattern, unchanged behavior, caller count, contract, or specific
+location as supporting evidence, read that exact source and confirm that it
+states or implements what the finding attributes to it. Do not infer a cited
+fact from a similar pattern elsewhere. Remove unverified supporting detail even
+when the core conclusion remains correct.
+
 Investigate uncertain claims. Run focused tests or static checks when they can
 confirm behavior without causing out-of-scope changes. If a claim remains
 speculative, omit it or explicitly present it as a question outside the formal

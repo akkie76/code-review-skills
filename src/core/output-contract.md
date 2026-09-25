@@ -101,6 +101,13 @@ Each actionable comment must contain:
 The body should normally be one compact paragraph. Connect evidence to trigger
 and impact rather than restating the code.
 
+Every factual statement in the comment must be directly supported by inspected
+code, configuration, documentation, test output, or verified tool behavior.
+This requirement applies to optional supporting details as well as the core
+defect claim. Cite a precedent, pattern, unchanged path, or specific location
+only after reading it directly; otherwise omit it. A correct conclusion does
+not make fabricated or inferred supporting evidence acceptable.
+
 ## Communicate constructively
 
 - Comment on the code and its observable behavior, never the author's ability,
