@@ -1,5 +1,5 @@
 {
-  "id": "should-same-diff-consistency",
+  "id": "must-same-diff-contract",
   "kind": "positive",
   "requests": [
     {"language": "en", "prompt": "Review the working tree changes."},
@@ -13,7 +13,7 @@
       "Skip the inconsistency because both implementations are new and there is no older implementation to compare.",
       "Claim that one precedence is correct without using the repository's documented contract."
     ],
-    "prefixes": ["SHOULD(Functionality)"],
+    "prefixes": ["MUST(Functionality)"],
     "output": "findings"
   }
 }
