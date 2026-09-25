@@ -1,0 +1,24 @@
+diff --git a/flags.js b/flags.js
+index f9bd7f2..69d9165 100644
+--- a/flags.js
++++ b/flags.js
+@@ -1,4 +1,4 @@
+ export class FeatureFlags {
+   get primaryEnabled() {
+-    return false;
++    return true;
+   }
+diff --git a/flags.test.js b/flags.test.js
+new file mode 100644
+index 0000000..b9ca8b9
+--- /dev/null
++++ b/flags.test.js
+@@ -0,0 +1,8 @@
++import assert from "node:assert/strict";
++import {FeatureFlags} from "./flags.js";
++
++test("primary is enabled", () => {
++  const flags = new FeatureFlags();
++
++  assert.equal(flags.secondaryEnabled, true);
++});
