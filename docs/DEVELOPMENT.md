@@ -33,6 +33,7 @@ build overwrites it.
 
 ## External changes
 
-Development is currently maintainer-led. Do not open an Issue or pull request
-without prior agreement. See [the support policy](../SUPPORT.md) for the
-evidence expected during an announced evaluation round.
+Development is currently maintainer-led. Evidence-backed Issues are welcome;
+pull requests require prior agreement. See
+[the support policy](../SUPPORT.md) for accepted topics and the evidence
+expected with a report.

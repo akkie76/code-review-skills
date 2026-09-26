@@ -35,7 +35,8 @@
 ## 運用
 
 - [ ] リポジトリの公開範囲、デフォルトブランチ、branch protectionを設定した
-- [ ] 事前合意のないIssueとPull Requestを無効化するか、公開済みサポート方針で案内した
+- [ ] Issue templateと公開済みサポート方針で、受け付けるfeedback、対象外の依頼、
+      Pull Request、脆弱性報告を適切な窓口へ案内した
 - [ ] `SECURITY.md`から案内する前にGitHubのPrivate vulnerability reportingを有効化した
 - [ ] 公開リポジトリURLからインストール手順を確認した
 

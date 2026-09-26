@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/akkie76/code-review-skills/security/policy
+    about: Report vulnerabilities privately according to the security policy.
+  - name: Pull request prior agreement
+    url: https://x.com/akkiee76
+    about: Contact the maintainer before opening a pull request.
