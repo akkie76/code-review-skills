@@ -11,7 +11,7 @@ Review the requested code change with the shared workflow below. Use the
 repository's available file, search, diff, and test tools to gather evidence.
 Do not modify the reviewed code unless the user separately asks for changes.
 
-<!-- source-sha256: 556f2cb1612d1948022d06952f7acdc8a26e1afd18e21d2e4516c1ecf04e1034 -->
+<!-- source-sha256: 0b1182ce0c2ece041f13ba80918d1a10bf34ad02dba6a9049d84147efceb8785 -->
 
 # Review Workflow
 
@@ -70,6 +70,11 @@ interactions between concerns. Depth spent on one feature or refactor does not
 substitute for reviewing an unrelated fix bundled into the same diff. Use the
 concern map as a coverage check before producing the final response. Do not
 manufacture findings for a large but coherent single-concern change.
+
+If the reviewing environment supports delegation and the concern map indicates
+that one pass is unlikely to give every concern sufficient attention, consider
+using [multi-agent decomposition](references/multi-agent-decomposition.md). It is
+optional; a final integration pass is required whenever it is used.
 
 Separate observed facts from assumptions. Use commit or pull-request context
 as supporting evidence, but let the code and authoritative project

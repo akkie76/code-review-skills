@@ -15,6 +15,8 @@ SOURCE_FILES = (
 )
 REFERENCE_FILES = {
     Path("references/review-criteria.md"): ROOT / "src/core/review-criteria.md",
+    Path("references/multi-agent-decomposition.md"): ROOT
+    / "src/core/multi-agent-decomposition.md",
     Path("references/output-contract.md"): ROOT / "src/core/output-contract.md",
     Path("references/communication-guidelines.md"): ROOT
     / "src/core/communication-guidelines.md",
@@ -47,6 +49,10 @@ def normalized_source(path: Path) -> str:
     text = text.replace(
         "Apply the checks in [review-criteria.md](review-criteria.md) according to the",
         "Apply the checks in [the review criteria](references/review-criteria.md) according to the",
+    )
+    text = text.replace(
+        "using [multi-agent decomposition](multi-agent-decomposition.md). It is",
+        "using [multi-agent decomposition](references/multi-agent-decomposition.md). It is",
     )
     text = text.replace(
         "Follow [output-contract.md](output-contract.md) for action level, viewpoint,",

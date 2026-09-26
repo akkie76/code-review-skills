@@ -15,6 +15,8 @@ style-only comments and unsupported speculation.
 - Traces changed behavior beyond the modified lines.
 - Checks correctness, interfaces, design, security, reliability, tests, and
   documentation according to risk.
+- Optionally decomposes complex reviews across independent sub-agents when the
+  environment supports delegation, followed by a required integration pass.
 - Requires a concrete trigger and impact for every finding.
 - Prefixes each comment with its action level and viewpoint, such as
   `MUST(Functionality):` or `BETTER(Simplicity):`.
