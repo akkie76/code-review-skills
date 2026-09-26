@@ -11,7 +11,7 @@ Review the requested code change with the shared workflow below. Use the
 repository's available file, search, diff, and test tools to gather evidence.
 Do not modify the reviewed code unless the user separately asks for changes.
 
-<!-- source-sha256: bdeab3e922ea9baedc260c48fc2040b2ec20549a1820626935d7f954c3eaf707 -->
+<!-- source-sha256: 5109fdf94a8d7b49aa422e108f113a6e1fbce6633343c8355be43de4221bad47 -->
 
 # Review Workflow
 
@@ -57,6 +57,9 @@ yourself:
 - Tests, documentation, configuration, migrations, and generated artifacts
   changed alongside the implementation.
 - Files that look related but are absent from the change.
+- Repeated categorical decisions, such as selection precedence, validation,
+  normalization, or error mapping, including occurrences that may fall into
+  different concerns.
 
 Partition the diff into distinct, independently reviewable concerns before
 starting the detailed review. A concern is one coherent behavior, invariant,
@@ -102,9 +105,10 @@ relevant interaction:
 6. Inspect contracts implemented or relied on by the changed code.
 7. Check lifecycle, concurrency, retry, cancellation, and cleanup behavior
    when applicable.
-8. Compare conceptually equivalent operations that the diff adds or modifies,
-   even when both implementations are new and no repository convention exists
-   yet. Check that parallel paths agree on selection precedence, validation,
+8. Resolve the repeated decision points recorded in the change map. Compare
+   conceptually equivalent operations that the diff adds or modifies, even
+   when both implementations are new and no repository convention exists yet.
+   Check that parallel paths agree on selection precedence, validation,
    normalization, error mapping, state transitions, and response construction,
    unless an inspected contract explains the difference.
 9. Compare nearby existing implementations when they represent the project's
@@ -153,10 +157,15 @@ states or implements what the finding attributes to it. Do not infer a cited
 fact from a similar pattern elsewhere. Remove unverified supporting detail even
 when the core conclusion remains correct.
 
-Investigate uncertain claims. Run focused tests or static checks when they can
-confirm behavior without causing out-of-scope changes. If a claim remains
-speculative, omit it or explicitly present it as a question outside the formal
-findings.
+Investigate uncertain claims. When a candidate's trigger can be checked safely,
+within the requested scope, and with available trusted tools, prefer the
+smallest focused test or static check that exercises the suspected risky input
+or path rather than only a convenient safe variant. Do not execute untrusted
+project code or commands without authorization, and avoid checks whose side
+effects cannot be isolated. If a claim remains speculative, omit it or
+explicitly present it as a question outside the formal findings. Do not use a
+lower action level as a substitute for validation; assign the level after the
+problem is established, based on its demonstrated impact.
 
 ## 6. Control false positives
 

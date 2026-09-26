@@ -30,5 +30,7 @@
   概念的に同等な実装を相互比較する整合性チェック
 - 関心事またはレビュー観点による任意の複数エージェント分解と、独立した検証および
   必須の統合確認を行う手順
+- 反復する判断点をchange mapで追跡し、指摘候補の具体的な危険入力・経路を安全な
+  focused verificationで確認する手順
 
 [未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD

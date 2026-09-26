@@ -1,0 +1,10 @@
+diff --git a/config.py b/config.py
+index 85808db..b608b49 100644
+--- a/config.py
++++ b/config.py
+@@ -1,4 +1,4 @@
+ def resolve_value(value, default):
+-    if value is None:
++    if value is None or value == "":
+         return default
+     return value

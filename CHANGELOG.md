@@ -33,5 +33,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   checks for conceptually equivalent implementations.
 - Optional multi-agent review decomposition by concern or viewpoint, with
   independent validation and a required reconciliation pass.
+- Change-map tracking for repeated decisions and safe focused verification of
+  the specific risky input or path behind a candidate finding.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
