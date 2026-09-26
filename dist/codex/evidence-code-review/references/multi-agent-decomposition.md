@@ -70,8 +70,13 @@ One final reviewer must reconcile all results before applying the output
 contract:
 
 1. Read every candidate finding, the complete diff, and the concern map.
-2. Recheck the evidence, trigger, impact, change attribution, and relevant
-   cross-concern or cross-viewpoint interactions for each candidate.
+2. Confirm that the cited evidence and recorded verification support each
+   candidate's trigger, impact, change attribution, and relevant cross-concern
+   or cross-viewpoint interactions. Do not mechanically repeat every
+   sub-review's verification. Re-run a focused check when its result is
+   missing, cannot be inspected, conflicts with another result, materially
+   affects classification, or warrants independent confirmation because of
+   the potential impact.
 3. Merge candidates that share one root cause. Reassess the action level and
    viewpoint from the complete evidence; do not automatically preserve either
    the highest or the most frequently proposed severity.
