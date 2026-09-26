@@ -1,0 +1,27 @@
+{
+  "id": "must-multi-agent-reconciliation",
+  "kind": "positive",
+  "requests": [
+    {
+      "language": "en",
+      "prompt": "Review the working tree changes. When your environment supports independent sub-agents, use the optional multi-agent decomposition guidance and reconcile the results before responding."
+    },
+    {
+      "language": "ja",
+      "prompt": "作業ツリーの変更をコードレビューしてください。実行環境が独立したサブエージェントに対応している場合は、任意の複数エージェント分解ガイドを使用し、結果を統合してから回答してください。"
+    }
+  ],
+  "expectations": {
+    "must_report": [
+      "The new value < 1 && value > 100 condition is impossible, so out-of-range integer limits are accepted despite the documented 1 through 100 contract.",
+      "The new truthy role check lets every member view records owned by another user, despite the documented rule that only admins may do so."
+    ],
+    "must_not_report": [
+      "Lose either independently demonstrated defect during final reconciliation.",
+      "Report the same root defect more than once under different action levels or viewpoints.",
+      "Manufacture a finding for the correct display-name normalization change."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}
