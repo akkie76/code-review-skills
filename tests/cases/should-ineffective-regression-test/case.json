@@ -1,0 +1,19 @@
+{
+  "id": "should-ineffective-regression-test",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The new regression test asserts secondaryEnabled, which was already true and is unrelated to the changed primaryEnabled property, so it passes without exercising the behavior it claims to cover."
+    ],
+    "must_not_report": [
+      "Treat the presence of a newly added test as evidence that the primaryEnabled change is covered.",
+      "Require an exact implementation-level assertion when an observable assertion of primaryEnabled would cover the regression."
+    ],
+    "prefixes": ["SHOULD(Test)"],
+    "output": "findings"
+  }
+}

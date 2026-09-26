@@ -1,0 +1,17 @@
+{
+  "id": "negative-optional-label",
+  "kind": "negative",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [],
+    "must_not_report": [
+      "The fallback changes valid falsy strings; an empty string is explicitly treated as absent by the contract.",
+      "A preference to use a conditional expression instead of the nullish coalescing operator."
+    ],
+    "prefixes": [],
+    "output": "no_findings"
+  }
+}

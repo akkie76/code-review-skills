@@ -1,0 +1,13 @@
+{
+  "id": "should-layer-boundary",
+  "kind": "positive",
+  "requests": [{"language": "en", "prompt": "Review the working tree changes."}],
+  "expectations": {
+    "must_report": [
+      "The domain module now imports the presentation layer despite the repository's dependency rule."
+    ],
+    "must_not_report": ["Demand an unrelated architecture redesign."],
+    "prefixes": ["SHOULD(Design)"],
+    "output": "findings"
+  }
+}

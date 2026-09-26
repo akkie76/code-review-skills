@@ -1,0 +1,19 @@
+{
+  "id": "must-verified-supporting-evidence",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The new truthy role check grants access to every non-empty role, so an ordinary member can view records owned by another user."
+    ],
+    "must_not_report": [
+      "Claim that policy.js contains an existing role === admin precedent; the cited file contains only an ownership check.",
+      "Add an unverified nearby-pattern claim merely to strengthen the otherwise sufficient access-control finding."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "must-focused-risk-variant",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The new value == empty-string comparison invokes arbitrary objects' equality methods, so a supported non-string value whose equality rejects string operands now raises instead of being returned unchanged."
+    ],
+    "must_not_report": [
+      "Dismiss the candidate after checking only safe values such as None, strings, numbers, or plain objects.",
+      "Downgrade the demonstrated contract violation because custom equality behavior is uncommon.",
+      "Claim that every supported arbitrary object can be compared with a string safely."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}

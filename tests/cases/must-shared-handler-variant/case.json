@@ -1,0 +1,19 @@
+{
+  "id": "must-shared-handler-variant",
+  "kind": "positive",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The unconditional authorized mutation runs for the unchanged guest variant before its guard, so every guest request bypasses the blocked result and reaches send."
+    ],
+    "must_not_report": [
+      "Conclude that there is no cross-consumer risk merely because route has only one textual call site.",
+      "Require a technology-specific rule to inspect the statically visible event variants."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}
