@@ -60,8 +60,12 @@ record, confirm that:
 - decomposition is skipped when its coordination cost is not justified;
 - each assigned reviewer can inspect the complete diff and required context;
 - each candidate finding is independently validated;
+- a complex focused check is delegated only when its coordination cost is
+  justified, and the verifier receives one exact claim, its evidence, the
+  complete diff, and a question to confirm or refute;
 - the final reviewer checks unowned interactions and reconciles duplicates,
-  action levels, and viewpoints; and
+  action levels, and viewpoints, and inspects any delegated verification
+  evidence rather than accepting the verifier's conclusion by itself; and
 - only reconciled findings appear in the final output.
 
 When comparing single-reviewer and decomposed runs, use fresh sessions and the

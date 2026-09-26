@@ -35,5 +35,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   independent validation and a required reconciliation pass.
 - Change-map tracking for repeated decisions and safe focused verification of
   the specific risky input or path behind a candidate finding.
+- Optional delegation of a complex candidate check to a single-purpose
+  verifier while retaining final-reviewer ownership of the evidence and result.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD

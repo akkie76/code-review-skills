@@ -19,6 +19,7 @@
     "must_not_report": [
       "Lose either independently demonstrated defect during final reconciliation.",
       "Report the same root defect more than once under different action levels or viewpoints.",
+      "Include an unresolved candidate or delegated verification transcript in the final output instead of a reconciled finding.",
       "Manufacture a finding for the correct display-name normalization change."
     ],
     "prefixes": ["MUST(Functionality)"],
