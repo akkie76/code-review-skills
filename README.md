@@ -95,10 +95,11 @@ technology-specific guarantees.
 
 ## Project policy
 
-This project currently follows a maintainer-led beta process. Unsolicited
-Issues and pull requests are not accepted. See [SUPPORT.md](SUPPORT.md) for the
-feedback policy and [SECURITY.md](SECURITY.md) for private vulnerability
-reporting guidance.
+This project currently follows a maintainer-led beta process. Evidence-backed
+Issues about defects, review accuracy, agent compatibility, and documentation
+are welcome. Pull requests require prior agreement. See
+[SUPPORT.md](SUPPORT.md) for the scope and evidence expected, and
+[SECURITY.md](SECURITY.md) for private vulnerability reporting guidance.
 
 The repository contains independently authored material. Its source and
 publication boundaries are described in

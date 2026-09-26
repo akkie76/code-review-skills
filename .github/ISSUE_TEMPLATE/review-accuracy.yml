@@ -1,0 +1,59 @@
+name: Review accuracy feedback
+description: Report a false positive, missed finding, severity mismatch, or clear accuracy improvement.
+title: "[Accuracy]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use public or sanitized evidence only. Do not submit private source code, repository names, pull request numbers, business rules, credentials, personal data, or unpublished material.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: The example is public or sanitized and can be evaluated without private context.
+          required: true
+        - label: I searched for an existing Issue that describes this result.
+          required: true
+  - type: dropdown
+    id: classification
+    attributes:
+      label: Feedback type
+      options:
+        - False positive
+        - Missed finding
+        - Severity mismatch
+        - Clear accuracy improvement
+        - Agent compatibility problem
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Skill revision
+      description: Tag or commit SHA used for the evaluation.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Agent and environment
+      description: Agent, product version, model when known, and operating system.
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: Review request and relevant instructions
+      description: Include the exact request and only the project guidance needed to reproduce the result.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Public or sanitized evidence
+      description: Show the smallest change, trigger, expected finding, actual result, and why the difference matters.
+    validations:
+      required: true

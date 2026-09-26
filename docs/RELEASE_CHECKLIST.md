@@ -37,8 +37,8 @@ Optional quality step:
 ## Operations
 
 - [ ] Repository visibility, default branch, and branch protection are set.
-- [ ] Unsolicited Issues and pull requests are disabled or clearly routed by
-      the published support policy.
+- [ ] Issue templates and the published support policy route accepted feedback,
+      out-of-scope requests, pull requests, and vulnerability reports correctly.
 - [ ] GitHub private vulnerability reporting is enabled before `SECURITY.md`
       directs users to it.
 - [ ] Installation steps have been tested from the public repository URL.

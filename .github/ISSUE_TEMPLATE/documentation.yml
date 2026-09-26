@@ -1,0 +1,34 @@
+name: Documentation issue
+description: Report incorrect, missing, or unclear documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched for an existing Issue that describes this problem.
+          required: true
+  - type: input
+    id: location
+    attributes:
+      label: Document location
+      description: File, heading, or public URL where the problem appears.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Explain what is incorrect, missing, or unclear.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested clarification
+      description: Optional wording or direction for improvement.
+    validations:
+      required: false

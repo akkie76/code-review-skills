@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a reproducible problem in the Skill, packaging, or installation.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the beta. Do not include private source code, credentials, personal data, or vulnerability details. Report vulnerabilities privately as described in SECURITY.md.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched for an existing Issue that describes this problem.
+          required: true
+        - label: I removed private and identifying information from this report.
+          required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Skill revision
+      description: Tag or commit SHA used for the evaluation.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Agent and environment
+      description: Agent, product version, model when known, and operating system.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal public reproduction
+      description: Provide a public repository, minimal fixture, or sanitized steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
