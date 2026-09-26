@@ -89,6 +89,15 @@ contract:
    lower-confidence variants of a validated finding.
 6. Apply the output contract only to the reconciled findings.
 
+During step 2, when a focused check is complex enough to compete with the
+reconciliation work, the final reviewer may delegate that check to a fresh
+verifier if the environment supports it and the coordination cost is justified.
+Give the verifier the complete diff, one exact candidate claim, its cited
+evidence, and the question to confirm or refute. Do not mechanically delegate
+every unresolved candidate or a check that is simpler to perform inline. The
+final reviewer must inspect the returned evidence and recorded result before
+using it; the verifier's conclusion is not evidence by itself.
+
 The final reviewer owns the result. Delegation increases investigation
 coverage but does not relax evidence requirements or transfer responsibility
 for false positives to the sub-agents.

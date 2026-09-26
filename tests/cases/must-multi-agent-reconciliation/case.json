@@ -19,6 +19,7 @@
     "must_not_report": [
       "Lose either independently demonstrated defect during final reconciliation.",
       "Report the same root defect more than once under different action levels or viewpoints.",
+      "Treat a delegated verifier's conclusion as evidence without inspecting its cited code or recorded check.",
       "Manufacture a finding for the correct display-name normalization change."
     ],
     "prefixes": ["MUST(Functionality)"],

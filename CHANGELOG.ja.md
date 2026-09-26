@@ -32,5 +32,7 @@
   必須の統合確認を行う手順
 - 反復する判断点をchange mapで追跡し、指摘候補の具体的な危険入力・経路を安全な
   focused verificationで確認する手順
+- 複雑な指摘候補の確認を専任の検証担当へ任意に委譲しつつ、最終reviewerが根拠と
+  結果に対する責任を維持する手順
 
 [未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
