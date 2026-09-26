@@ -31,5 +31,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   nearby patterns, unchanged behavior, and specific source locations.
 - Per-concern review coverage for bundled changes and same-diff consistency
   checks for conceptually equivalent implementations.
+- Optional multi-agent review decomposition by concern or viewpoint, with
+  independent validation and a required reconciliation pass.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD

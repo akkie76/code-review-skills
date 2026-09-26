@@ -43,3 +43,27 @@ content, or unpublished correspondence.
 
 Use [the manual evaluation record](RESULT_TEMPLATE.md) so product, model,
 revision, language, and unexpected output are recorded consistently.
+
+## Multi-agent evaluation boundary
+
+The optional multi-agent decomposition guidance depends on whether the host
+environment permits delegation and on how it exposes sub-agent execution. The
+current `case.json` plus `change.diff` fixture format observes only the final
+review output, so `make test` and the fixture count do not demonstrate that
+delegation, independent sub-review validation, or final reconciliation
+occurred.
+
+Evaluate this guidance manually in a host that supports delegation, using a
+diff with multiple independent concerns. In addition to the normal evaluation
+record, confirm that:
+
+- decomposition is skipped when its coordination cost is not justified;
+- each assigned reviewer can inspect the complete diff and required context;
+- each candidate finding is independently validated;
+- the final reviewer checks unowned interactions and reconciles duplicates,
+  action levels, and viewpoints; and
+- only reconciled findings appear in the final output.
+
+When comparing single-reviewer and decomposed runs, use fresh sessions and the
+same diff, request, model, and skill revision. Record both missed defects and
+false positives; a higher finding count alone is not evidence of improvement.

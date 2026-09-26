@@ -56,6 +56,11 @@ substitute for reviewing an unrelated fix bundled into the same diff. Use the
 concern map as a coverage check before producing the final response. Do not
 manufacture findings for a large but coherent single-concern change.
 
+If the reviewing environment supports delegation and the concern map indicates
+that one pass is unlikely to give every concern sufficient attention, consider
+using [multi-agent decomposition](multi-agent-decomposition.md). It is
+optional; a final integration pass is required whenever it is used.
+
 Separate observed facts from assumptions. Use commit or pull-request context
 as supporting evidence, but let the code and authoritative project
 documentation determine actual behavior.
