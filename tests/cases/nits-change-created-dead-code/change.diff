@@ -1,0 +1,9 @@
+diff --git a/config.js b/config.js
+index 6f26107..a21c643 100644
+--- a/config.js
++++ b/config.js
+@@ -5,3 +5,3 @@
+ export function loadConfig(text) {
+-  return decode(text);
++  return JSON.parse(text);
+ }

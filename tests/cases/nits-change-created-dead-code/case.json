@@ -1,0 +1,16 @@
+{
+  "id": "nits-change-created-dead-code",
+  "kind": "positive",
+  "requests": [{"language": "en", "prompt": "Review the working tree changes."}],
+  "expectations": {
+    "must_report": [
+      "The change removes the only call to the private decode function, leaving it unused; repository search confirms that no consumer remains."
+    ],
+    "must_not_report": [
+      "Search for or report unrelated pre-existing dead code.",
+      "Treat the unused private helper as a functional defect."
+    ],
+    "prefixes": ["NITS(Simplicity)"],
+    "output": "findings"
+  }
+}
