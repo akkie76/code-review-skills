@@ -58,6 +58,9 @@ Check for:
 - New extension points that require repeated modification of unrelated code.
 - Duplicate sources of truth or inconsistent implementations of the same
   policy.
+- Branches, symbols, assets, configuration, or tests that the change leaves
+  unreachable or unused. Confirm that no consumer remains by repository search
+  or authoritative tooling before reporting the dead code.
 - Abstractions that hide important behavior, or fragmentation that makes a
   single operation unnecessarily difficult to follow.
 
