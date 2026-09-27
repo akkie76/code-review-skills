@@ -9,6 +9,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-09-27
+
 ### Added
 
 - A vendor-neutral, evidence-driven code-review workflow.
@@ -37,5 +39,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   the specific risky input or path behind a candidate finding.
 - Optional delegation of a complex candidate check to a single-purpose
   verifier while retaining final-reviewer ownership of the evidence and result.
+- Review guidance and a behavioral fixture for dead code introduced by the
+  reviewed change, with required consumer verification before reporting it.
+- Structured Issue forms and a support policy for evidence-backed beta
+  feedback while keeping pull requests subject to prior agreement.
 
 [Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.1]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.1

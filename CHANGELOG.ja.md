@@ -9,6 +9,8 @@
 
 ## [未リリース]
 
+## [0.1.0-beta.1] - 2026-09-27
+
 ### 追加
 
 - ベンダーに依存しない、根拠を重視したコードレビューワークフロー
@@ -34,5 +36,10 @@
   focused verificationで確認する手順
 - 複雑な指摘候補の確認を専任の検証担当へ任意に委譲しつつ、最終reviewerが根拠と
   結果に対する責任を維持する手順
+- レビュー対象の変更によって発生したデッドコードを確認し、指摘前に利用箇所が
+  残っていないことを検証するルールと行動評価fixture
+- 根拠を添えたベータ版feedbackを受け付ける構造化Issue formと、Pull Requestの
+  事前合意制を維持するサポート方針
 
 [未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.1]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.1
