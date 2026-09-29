@@ -29,7 +29,7 @@ def run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> Non
         )
 
 
-def main() -> int:
+def check_fixtures() -> int:
     counts = {"go": 0, "java": 0}
     for case in sorted(CASES.iterdir()):
         repository = case / "repository"
@@ -81,6 +81,14 @@ def main() -> int:
         raise RuntimeError(f"expected both Go and Java fixtures, found {counts}")
     print(f"Validated {counts['go']} Go and {counts['java']} Java fixtures.")
     return 0
+
+
+def main() -> int:
+    try:
+        return check_fixtures()
+    except (OSError, RuntimeError) as error:
+        print(f"ERROR: {error}")
+        return 1
 
 
 if __name__ == "__main__":
