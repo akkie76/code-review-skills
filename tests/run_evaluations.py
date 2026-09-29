@@ -15,6 +15,29 @@ ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "tests/cases"
 REQUIRED_EXPECTATIONS = {"must_report", "must_not_report", "prefixes", "output"}
 VALID_RESULTS = {"findings", "no_findings"}
+REQUIRED_FALSE_POSITIVE_CATEGORIES = {
+    "behavior-preserving-refactor",
+    "tool-enforced-style",
+    "pre-existing-defect",
+    "verified-language-guarantee",
+    "fully-updated-shared-contract",
+}
+
+
+def negative_expectation_errors(expectations: dict, relative: Path) -> list[str]:
+    errors = []
+    suppressed = expectations.get("must_not_report")
+    if not isinstance(suppressed, list) or not suppressed or not all(
+        isinstance(item, str) and item.strip() for item in suppressed
+    ):
+        errors.append(f"negative case needs non-empty must_not_report: {relative}")
+    if expectations.get("output") != "no_findings":
+        errors.append(f"negative case must expect no_findings: {relative}")
+    if expectations.get("must_report") != []:
+        errors.append(f"negative case must have empty must_report: {relative}")
+    if expectations.get("prefixes") != []:
+        errors.append(f"negative case must have empty prefixes: {relative}")
+    return errors
 
 
 def main() -> int:
@@ -28,6 +51,7 @@ def main() -> int:
     languages: set[str] = set()
     observed_action_levels: set[str] = set()
     observed_viewpoints: set[str] = set()
+    negative_categories: set[str] = set()
     for case_file in case_files:
         relative = case_file.relative_to(ROOT)
         try:
@@ -61,6 +85,13 @@ def main() -> int:
                 languages.add(request.get("language", ""))
 
         expectations = case.get("expectations", {})
+        if kind == "negative":
+            category = case.get("false_positive_category")
+            if not isinstance(category, str) or not category.strip():
+                errors.append(f"negative case needs a false-positive category: {relative}")
+            else:
+                negative_categories.add(category)
+            errors.extend(negative_expectation_errors(expectations, relative))
         missing = REQUIRED_EXPECTATIONS - expectations.keys()
         if missing:
             errors.append(f"missing expectations {sorted(missing)}: {relative}")
@@ -121,6 +152,11 @@ def main() -> int:
     if observed_viewpoints != required_viewpoints:
         errors.append(
             f"expected prefixes must cover viewpoints {sorted(required_viewpoints)}"
+        )
+    missing_categories = REQUIRED_FALSE_POSITIVE_CATEGORIES - negative_categories
+    if missing_categories:
+        errors.append(
+            f"negative cases must cover {sorted(missing_categories)}"
         )
 
     if errors:

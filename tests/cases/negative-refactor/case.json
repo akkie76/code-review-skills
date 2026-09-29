@@ -1,0 +1,18 @@
+{
+  "id": "negative-refactor",
+  "kind": "negative",
+  "false_positive_category": "behavior-preserving-refactor",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [],
+    "must_not_report": [
+      "Claim that empty or non-empty reports change: the same count, aggregation loop, status expression, and return format are preserved.",
+      "Report a behavior change merely because the larger aggregation and formatting refactor introduces a private record and helper methods."
+    ],
+    "prefixes": [],
+    "output": "no_findings"
+  }
+}

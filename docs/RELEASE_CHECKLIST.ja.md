@@ -8,6 +8,8 @@
 ## 自動検査
 
 - [ ] clean checkoutで`make release-check`が成功する
+- [ ] PRの必須CIチェック`validate`が成功する。Java・Goのfixture向け
+      `make language-check`を含み、ローカルへの実行環境の導入は必須としない
 - [ ] `make build`を再実行しても追跡対象に差分が出ない
 - [ ] 最終ソース変更後の全生成物を確認した
 - [ ] リリース対象ファイルに未コミットの変更がない

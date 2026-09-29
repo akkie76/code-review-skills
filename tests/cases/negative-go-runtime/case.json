@@ -1,7 +1,7 @@
 {
-  "id": "negative-optional-label",
+  "id": "negative-go-runtime",
   "kind": "negative",
-  "false_positive_category": "contract-defined-behavior",
+  "false_positive_category": "verified-language-guarantee",
   "requests": [
     {"language": "en", "prompt": "Review the working tree changes."},
     {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
@@ -9,8 +9,8 @@
   "expectations": {
     "must_report": [],
     "must_not_report": [
-      "The fallback changes valid falsy strings; an empty string is explicitly treated as absent by the contract.",
-      "A preference to use a conditional expression instead of the nullish coalescing operator."
+      "Claim that Count(nil) panics or changes from zero: Go's built-in len returns zero for a nil slice.",
+      "Require an explicit nil guard for correctness when no project-specific contract requires it."
     ],
     "prefixes": [],
     "output": "no_findings"

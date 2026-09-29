@@ -13,12 +13,14 @@ Open an Issue using the closest repository template for:
 - A reproducible defect in the Skill, packaging, or installation process.
 - A false positive, missed finding, or severity mismatch produced during an
   evidence-backed evaluation.
-- A Codex or Claude Code compatibility problem.
-- A proposal with a concrete example showing a clear accuracy improvement.
+- A Codex or Claude Code compatibility problem (use the Bug report template).
+- A proposal with a concrete example showing a clear accuracy improvement
+  (use the Accuracy improvement proposal template; a prior Skill run is not required).
 - Incorrect or unclear documentation.
 
 Use the template fields and provide the smallest public reproduction or
-sanitized evidence that demonstrates the behavior. Useful reports include:
+sanitized evidence that demonstrates the behavior or proposed improvement.
+Where applicable, useful reports include:
 
 - The agent, product version, model, and skill revision used.
 - A minimal change or public reproduction repository.

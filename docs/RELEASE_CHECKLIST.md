@@ -9,6 +9,8 @@ release while any required item remains incomplete.
 ## Automated checks
 
 - [ ] `make release-check` passes from a clean checkout.
+- [ ] The PR's required `validate` CI check passes, including `make language-check`
+      for Java and Go fixtures (these runtimes are not required locally).
 - [ ] A second `make build` produces no tracked diff.
 - [ ] All generated packages were inspected after the final source change.
 - [ ] The branch contains no uncommitted release file.

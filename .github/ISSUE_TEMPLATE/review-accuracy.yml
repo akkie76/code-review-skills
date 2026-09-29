@@ -1,5 +1,5 @@
 name: Review accuracy feedback
-description: Report a false positive, missed finding, severity mismatch, or clear accuracy improvement.
+description: Report an observed false positive, missed finding, or severity mismatch.
 title: "[Accuracy]: "
 labels:
   - enhancement
@@ -25,8 +25,6 @@ body:
         - False positive
         - Missed finding
         - Severity mismatch
-        - Clear accuracy improvement
-        - Agent compatibility problem
     validations:
       required: true
   - type: input
