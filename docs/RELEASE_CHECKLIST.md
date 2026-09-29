@@ -45,8 +45,10 @@ Optional quality step:
 
 ## Release
 
-- [ ] `CHANGELOG.md` contains a dated `0.1.0-beta.1` section and comparison links.
-- [ ] `docs/releases/v0.1.0-beta.1.md` matches the final release contents.
+- [ ] `VERSION` contains `0.1.0-beta.2`, and both generated Skill packages
+      identify `v0.1.0-beta.2`.
+- [ ] `CHANGELOG.md` contains a dated `0.1.0-beta.2` section and comparison links.
+- [ ] `docs/releases/v0.1.0-beta.2.md` matches the final release contents.
 - [ ] The release commit has received final review.
-- [ ] Tag `v0.1.0-beta.1` only after every required item above is complete.
+- [ ] Tag `v0.1.0-beta.2` only after every required item above is complete.
 - [ ] Mark the GitHub Release as a pre-release.

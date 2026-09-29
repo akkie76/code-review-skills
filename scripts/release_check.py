@@ -121,6 +121,7 @@ def main() -> int:
     required = {
         "README.md",
         "README.ja.md",
+        "VERSION",
         "LICENSE",
         "SECURITY.md",
         "SECURITY.ja.md",

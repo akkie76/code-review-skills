@@ -9,6 +9,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- A canonical version file and version marker in both generated Skill packages
+  for the upcoming `v0.1.0-beta.2` release.
+
 ## [0.1.0-beta.1] - 2026-09-27
 
 ### Added

@@ -66,6 +66,7 @@ def normalized_source(path: Path) -> str:
 
 
 def render() -> str:
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     sections = "\n\n---\n\n".join(normalized_source(path) for path in SOURCE_FILES)
     digest = hashlib.sha256(
         b"\0".join(
@@ -75,6 +76,7 @@ def render() -> str:
     return (
         FRONTMATTER
         + GENERATED_NOTICE
+        + f"\n<!-- skill-version: v{version} -->\n"
         + f"\n<!-- source-sha256: {digest} -->\n\n"
         + sections
         + "\n"
