@@ -17,7 +17,8 @@ make test
 内部整合性を検証します。AIサービスは呼び出しません。
 
 負例には`false_positive_category`を記録し、抑制したい具体的な誤指摘を
-`must_not_report`に記載します。`no_findings`の件数ではなく、挙動を保つ
+`must_not_report`に記載します。`must_report`と`prefixes`は空、`output`は
+`no_findings`である必要があります。`no_findings`の件数ではなく、挙動を保つ
 リファクタ、ツールが検査するスタイル、既存不具合、検証済みの言語保証、全呼び出し元を
 更新した共有契約という異なる状況を確認します。いずれもOSSからコピーしたコードでは
 なく、この評価用に作成した例です。JavaのcaseはJava 17、GoのcaseはGo 1.22と

@@ -19,7 +19,8 @@ and the structure and internal consistency of every evaluation case. It does
 not call an AI service.
 
 Negative cases record a `false_positive_category` and a concrete invalid
-finding under `must_not_report`. The suite checks distinct traps—behavior-
+finding under `must_not_report`; `must_report` and `prefixes` must be empty, and
+`output` must be `no_findings`. The suite checks distinct traps—behavior-
 preserving refactors, tool-enforced style, pre-existing defects, verified
 language guarantees, and fully updated shared contracts—rather than treating
 the number of `no_findings` cases as a measure of coverage. These are

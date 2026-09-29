@@ -24,6 +24,22 @@ REQUIRED_FALSE_POSITIVE_CATEGORIES = {
 }
 
 
+def negative_expectation_errors(expectations: dict, relative: Path) -> list[str]:
+    errors = []
+    suppressed = expectations.get("must_not_report")
+    if not isinstance(suppressed, list) or not suppressed or not all(
+        isinstance(item, str) and item.strip() for item in suppressed
+    ):
+        errors.append(f"negative case needs non-empty must_not_report: {relative}")
+    if expectations.get("output") != "no_findings":
+        errors.append(f"negative case must expect no_findings: {relative}")
+    if expectations.get("must_report") != []:
+        errors.append(f"negative case must have empty must_report: {relative}")
+    if expectations.get("prefixes") != []:
+        errors.append(f"negative case must have empty prefixes: {relative}")
+    return errors
+
+
 def main() -> int:
     errors: list[str] = []
     identifiers: set[str] = set()
@@ -75,11 +91,7 @@ def main() -> int:
                 errors.append(f"negative case needs a false-positive category: {relative}")
             else:
                 negative_categories.add(category)
-            suppressed = expectations.get("must_not_report")
-            if not isinstance(suppressed, list) or not suppressed or not all(
-                isinstance(item, str) and item.strip() for item in suppressed
-            ):
-                errors.append(f"negative case needs non-empty must_not_report: {relative}")
+            errors.extend(negative_expectation_errors(expectations, relative))
         missing = REQUIRED_EXPECTATIONS - expectations.keys()
         if missing:
             errors.append(f"missing expectations {sorted(missing)}: {relative}")

@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import build, release_check
-from tests import check_language_fixtures
+from tests import check_language_fixtures, run_evaluations
 
 
 class ReleaseCheckTests(unittest.TestCase):
@@ -116,6 +116,33 @@ class LanguageFixtureTests(unittest.TestCase):
             ), redirect_stdout(output):
                 self.assertEqual(check_language_fixtures.main(), 1)
             self.assertEqual(output.getvalue(), "ERROR: patch failed\n")
+
+
+class EvaluationFixtureTests(unittest.TestCase):
+    def test_negative_cases_require_no_findings_and_empty_finding_fields(self) -> None:
+        valid = {
+            "must_report": [],
+            "must_not_report": ["An unsupported finding"],
+            "prefixes": [],
+            "output": "no_findings",
+        }
+        case_path = Path("tests/cases/example/case.json")
+        self.assertEqual(run_evaluations.negative_expectation_errors(valid, case_path), [])
+
+        invalid_values = {
+            "output": "findings",
+            "must_report": ["A finding"],
+            "prefixes": ["MUST(Functionality)"],
+            "must_not_report": [],
+        }
+        for field, value in invalid_values.items():
+            with self.subTest(field=field):
+                expectations = {**valid, field: value}
+                errors = run_evaluations.negative_expectation_errors(
+                    expectations, case_path
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn(field if field != "output" else "no_findings", errors[0])
 
 
 if __name__ == "__main__":
