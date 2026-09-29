@@ -25,8 +25,12 @@ language guarantees, and fully updated shared contracts—rather than treating
 the number of `no_findings` cases as a measure of coverage. These are
 purpose-built examples, not copied OSS code. The Java fixtures assume Java 17;
 the Go fixtures assume Go 1.22 and the standard behavior of `len` on nil slices.
-The fixture validator checks patch applicability but does not compile Java or
-Go or establish that an agent actually suppresses false positives.
+The fixture validator checks patch applicability. CI also runs
+`make language-check`: after applying each patch in an isolated temporary
+directory, it compiles Java 17 sources and runs `gofmt` and `go test` for Go
+1.22 modules. This check can be run locally when those runtimes are installed;
+Go dependency downloads are disabled. Neither check establishes that an agent
+actually suppresses false positives.
 
 ## Manual agent evaluation
 

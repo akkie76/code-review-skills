@@ -1,4 +1,4 @@
-.PHONY: build check test release-check
+.PHONY: build check test release-check language-check
 
 build:
 	python3 scripts/build.py
@@ -12,3 +12,6 @@ test: check
 
 release-check: test
 	python3 scripts/release_check.py
+
+language-check:
+	python3 tests/check_language_fixtures.py
