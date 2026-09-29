@@ -1,19 +1,18 @@
 diff --git a/ReportService.java b/ReportService.java
 --- a/ReportService.java
 +++ b/ReportService.java
-@@ -2,20 +2,32 @@
+@@ -2,20 +2,31 @@
  
  final class ReportService {
      String summarize(List<Integer> amounts) {
          int count = amounts.size();
-+        Totals totals = calculate(amounts);
++        Totals totals = calculate(amounts, count);
 +        return format(count, totals);
 +    }
 +
 +    private record Totals(int total, int min, int max) {}
 +
-+    private Totals calculate(List<Integer> amounts) {
-+        int count = amounts.size();
++    private Totals calculate(List<Integer> amounts, int count) {
          int total = 0;
          int min = 0;
          int max = 0;
