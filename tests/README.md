@@ -18,6 +18,16 @@ This verifies the generated packages, release safeguards, package cleanup,
 and the structure and internal consistency of every evaluation case. It does
 not call an AI service.
 
+Negative cases record a `false_positive_category` and a concrete invalid
+finding under `must_not_report`. The suite checks distinct traps—behavior-
+preserving refactors, tool-enforced style, pre-existing defects, verified
+language guarantees, and fully updated shared contracts—rather than treating
+the number of `no_findings` cases as a measure of coverage. These are
+purpose-built examples, not copied OSS code. The Java fixtures assume Java 17;
+the Go fixtures assume Go 1.22 and the standard behavior of `len` on nil slices.
+The fixture validator checks patch applicability but does not compile Java or
+Go or establish that an agent actually suppresses false positives.
+
 ## Manual agent evaluation
 
 Run each case separately with both Codex and Claude Code:
@@ -36,6 +46,8 @@ Run each case separately with both Codex and Claude Code:
 An evaluation passes only when all `must_report`, `must_not_report`, `prefixes`,
 and `output` expectations hold. Any additional finding must independently meet
 the skill's evidence requirements; otherwise record it as a false positive.
+Evaluate at least one negative case with both English and Japanese requests
+in each agent; do not infer cross-language behavior from the fixture schema.
 
 Use a dated local evaluation record while the project is private. Do not
 commit model transcripts when they contain machine paths, private repository

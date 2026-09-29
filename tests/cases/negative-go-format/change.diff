@@ -1,0 +1,10 @@
+diff --git a/label.go b/label.go
+--- a/label.go
++++ b/label.go
+@@ -3,5 +3,5 @@
+ import "fmt"
+ 
+ func Label(id int) string {
+-    return fmt.Sprintf("item-%d", id)
++	return fmt.Sprintf("item-%d", id)
+ }

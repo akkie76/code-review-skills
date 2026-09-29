@@ -1,0 +1,12 @@
+diff --git a/records.go b/records.go
+--- a/records.go
++++ b/records.go
+@@ -1,8 +1,5 @@
+ package records
+ 
+ func Count(records []string) int {
+-	if records == nil {
+-		return 0
+-	}
+ 	return len(records)
+ }

@@ -1,0 +1,40 @@
+name: Accuracy improvement proposal
+description: Propose a concrete improvement that has not necessarily been evaluated yet.
+title: "[Proposal]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use public or sanitized examples only. Do not submit private source code, repository names, pull request numbers, business rules, credentials, personal data, or unpublished material. Use "Review accuracy feedback" instead if you have an observed false positive, missed finding, or severity mismatch.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: The example is public or sanitized and can be evaluated without private context.
+          required: true
+        - label: I searched for an existing Issue covering this proposal.
+          required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Concrete example
+      description: Show the smallest public or sanitized change and relevant project context. An actual Skill run is not required.
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: Expected accuracy improvement
+      description: Explain the finding the Skill should produce or suppress, why, and how the example would demonstrate improvement.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Prior evaluation (optional)
+      description: If already tested, include the Skill revision, agent, review request, and observed output.
+    validations:
+      required: false

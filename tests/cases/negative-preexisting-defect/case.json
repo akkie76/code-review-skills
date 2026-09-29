@@ -1,0 +1,17 @@
+{
+  "id": "negative-preexisting-defect",
+  "kind": "negative",
+  "false_positive_category": "pre-existing-defect",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."}
+  ],
+  "expectations": {
+    "must_report": [],
+    "must_not_report": [
+      "Report the empty-input divide-by-zero as introduced by this rename: the old code already divides by len(values), and the patch neither creates nor worsens that behavior.",
+      "Claim that changing the accumulator name changes the computed mean."
+    ],
+    "prefixes": [],
+    "output": "no_findings"
+  }
+}
