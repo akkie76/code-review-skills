@@ -61,6 +61,9 @@ For one repository, copy the package to
 it with `/evidence-code-review` or ask Claude Code to use the
 `evidence-code-review` skill.
 
+The installed package records its version in a `skill-version` comment near
+the top of `SKILL.md`. This repository's current version is in `VERSION`.
+
 Review a skill before installing it. A skill supplies instructions to an
 agent and should be treated like other executable development configuration.
 See the [installation guide](docs/INSTALLATION.md) for project installation,

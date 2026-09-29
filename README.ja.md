@@ -61,6 +61,9 @@ cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 `/evidence-code-review`で明示的に呼び出すか、Claude CodeへこのSkillを使って
 変更をレビューするよう依頼してください。
 
+インストールしたpackageのバージョンは`SKILL.md`冒頭付近の`skill-version`コメントで
+確認できます。このリポジトリの現在のバージョンは`VERSION`に記録しています。
+
 Skillはエージェントへ指示を与えるものです。ほかの実行可能な開発設定と同様に、
 内容を確認してからインストールしてください。
 [インストールガイド](docs/INSTALLATION.ja.md)には、プロジェクト単位の導入、Windows、

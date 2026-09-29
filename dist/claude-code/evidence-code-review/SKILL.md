@@ -11,6 +11,8 @@ Review the requested code change with the shared workflow below. Use the
 repository's available file, search, diff, and test tools to gather evidence.
 Do not modify the reviewed code unless the user separately asks for changes.
 
+<!-- skill-version: v0.1.0-beta.2 -->
+
 <!-- source-sha256: e8f57bd7b179d798f100bdc5444d8cdaf2549ef021d7a959539da80cee35733b -->
 
 # Review Workflow
