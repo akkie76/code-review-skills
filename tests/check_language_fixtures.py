@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Compile Java and test Go evaluation fixtures after applying each patch."""
+"""Check Java, Go, and Python evaluation fixtures after applying each patch."""
 
 from __future__ import annotations
 
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -30,14 +31,15 @@ def run(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> Non
 
 
 def check_fixtures() -> int:
-    counts = {"go": 0, "java": 0}
+    counts = {"go": 0, "java": 0, "python": 0}
     for case in sorted(CASES.iterdir()):
         repository = case / "repository"
         if not repository.is_dir():
             continue
         is_go = (repository / "go.mod").is_file()
         is_java = any(repository.rglob("*.java"))
-        if not is_go and not is_java:
+        is_python = any(repository.rglob("*.py"))
+        if not (is_go or is_java or is_python):
             continue
 
         with tempfile.TemporaryDirectory() as directory:
@@ -77,9 +79,16 @@ def check_fixtures() -> int:
                 )
                 counts["java"] += 1
 
+            if is_python:
+                run([sys.executable, "-m", "compileall", "-q", "."], checkout)
+                counts["python"] += 1
+
     if not all(counts.values()):
-        raise RuntimeError(f"expected both Go and Java fixtures, found {counts}")
-    print(f"Validated {counts['go']} Go and {counts['java']} Java fixtures.")
+        raise RuntimeError(f"expected Go, Java, and Python fixtures, found {counts}")
+    print(
+        f"Validated {counts['go']} Go, {counts['java']} Java, "
+        f"and {counts['python']} Python fixtures."
+    )
     return 0
 
 

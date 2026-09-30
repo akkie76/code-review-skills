@@ -69,7 +69,7 @@ class BuildTests(unittest.TestCase):
 
 
 class LanguageFixtureTests(unittest.TestCase):
-    def test_checks_applied_go_and_java_fixtures(self) -> None:
+    def test_checks_applied_go_java_and_python_fixtures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             cases = Path(directory)
             go_repository = cases / "go-case/repository"
@@ -81,6 +81,10 @@ class LanguageFixtureTests(unittest.TestCase):
             java_repository.mkdir(parents=True)
             (java_repository / "Check.java").write_text("class Check {}\n")
             (cases / "java-case/change.diff").write_text("sample patch\n")
+            python_repository = cases / "python-case/repository"
+            python_repository.mkdir(parents=True)
+            (python_repository / "check.py").write_text("value = 1\n")
+            (cases / "python-case/change.diff").write_text("sample patch\n")
 
             with patch.object(check_language_fixtures, "CASES", cases), patch.object(
                 check_language_fixtures, "run"
@@ -92,9 +96,10 @@ class LanguageFixtureTests(unittest.TestCase):
                 self.assertEqual(check_language_fixtures.check_fixtures(), 0)
 
             commands = [invocation.args[0] for invocation in run_command.call_args_list]
-            self.assertEqual([command[0] for command in commands].count("git"), 2)
+            self.assertEqual([command[0] for command in commands].count("git"), 3)
             self.assertIn(["go", "test", "./..."], commands)
             self.assertTrue(any(command[:3] == ["javac", "--release", "17"] for command in commands))
+            self.assertTrue(any(command[1:] == ["-m", "compileall", "-q", "."] for command in commands))
             go_environment = next(
                 invocation.args[2] for invocation in run_command.call_args_list
                 if invocation.args[0][:2] == ["go", "test"]
@@ -143,6 +148,49 @@ class EvaluationFixtureTests(unittest.TestCase):
                 )
                 self.assertEqual(len(errors), 1)
                 self.assertIn(field if field != "output" else "no_findings", errors[0])
+
+    def test_mixed_noise_cases_need_evidence_and_both_candidate_types(self) -> None:
+        case = {
+            "kind": "positive",
+            "source": "original-synthetic",
+            "ecosystem": "Go 1.22",
+            "assumptions": ["Documented contract"],
+            "limitations": ["No model execution"],
+            "expected_evidence": ["Changed function and unchanged caller"],
+            "expectations": {
+                "must_report": ["Valid defect"],
+                "must_not_report": ["Invalid candidate"],
+            },
+        }
+        case_path = Path("tests/cases/example/case.json")
+        self.assertEqual(run_evaluations.mixed_noise_errors(case, case_path), [])
+        incomplete = {
+            **case,
+            "expected_evidence": [],
+            "expectations": {"must_report": ["Valid defect"], "must_not_report": []},
+        }
+        errors = run_evaluations.mixed_noise_errors(incomplete, case_path)
+        self.assertEqual(len(errors), 2)
+        self.assertTrue(any("expected_evidence" in error for error in errors))
+        self.assertTrue(any("valid and invalid candidates" in error for error in errors))
+        for field in ("must_report", "must_not_report"):
+            invalid_values = (
+                "candidate", {"finding": "candidate"}, [""], ["  "],
+                [42], ["valid", None],
+            )
+            for invalid in invalid_values:
+                with self.subTest(field=field, invalid=invalid):
+                    malformed = {
+                        **case,
+                        "expectations": {**case["expectations"], field: invalid},
+                    }
+                    errors = run_evaluations.mixed_noise_errors(malformed, case_path)
+                    self.assertEqual(len(errors), 1)
+                    self.assertIn("valid and invalid candidates", errors[0])
+        external = {**case, "source": "https://example.org/source"}
+        errors = run_evaluations.mixed_noise_errors(external, case_path)
+        self.assertEqual(len(errors), 4)
+        self.assertTrue(any("redistribution_basis" in error for error in errors))
 
 
 if __name__ == "__main__":

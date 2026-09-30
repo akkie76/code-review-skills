@@ -1,0 +1,48 @@
+diff --git a/tags.py b/tags.py
+--- a/tags.py
++++ b/tags.py
+@@ -1,2 +1,2 @@
+ def clean_tags(values: list[str]) -> list[str]:
+-    return [value.strip() for value in values if value.strip()]
++    return sorted({value.strip() for value in values if value.strip()})
+diff --git a/permissions.py b/permissions.py
+--- a/permissions.py
++++ b/permissions.py
+@@ -1,2 +1,2 @@
+ def can_export(user_roles: set[str], required_roles: set[str]) -> bool:
+-    return all(role in user_roles for role in required_roles)
++    return any(role in user_roles for role in required_roles)
+diff --git a/label.py b/label.py
+--- a/label.py
++++ b/label.py
+@@ -1,3 +1,7 @@
+ def label(item: dict[str, str]) -> str:
++    return display_name(item) + " (" + item["id"] + ")"
++
++
++def display_name(item: dict[str, str]) -> str:
+     name = item["name"].strip()
+-    return f'{name} ({item["id"]})'
++    return name
+diff --git a/audit.py b/audit.py
+--- a/audit.py
++++ b/audit.py
+@@ -1,2 +1,6 @@
++EVENT_PREFIX = "event="
++ACTOR_PREFIX = " actor="
++
++
+ def event_line(event: str, actor: str) -> str:
+-    return "event=" + event + " actor=" + actor
++    return EVENT_PREFIX + event + ACTOR_PREFIX + actor
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,7 @@
+ # Profile package
+ 
+ `primary_tag` displays the first user-supplied nonblank tag. Export access
+ requires all listed roles. The label and audit helpers format display text.
++
++The package accepts plain strings and sets. Display-only helpers do not
++perform authorization checks; callers must use `can_export` before an export.

@@ -22,14 +22,19 @@ REQUIRED_FALSE_POSITIVE_CATEGORIES = {
     "verified-language-guarantee",
     "fully-updated-shared-contract",
 }
+MINIMUM_MIXED_NOISE_CASES = 3
+
+
+def is_nonempty_text_list(value: object) -> bool:
+    return isinstance(value, list) and bool(value) and all(
+        isinstance(item, str) and item.strip() for item in value
+    )
 
 
 def negative_expectation_errors(expectations: dict, relative: Path) -> list[str]:
     errors = []
     suppressed = expectations.get("must_not_report")
-    if not isinstance(suppressed, list) or not suppressed or not all(
-        isinstance(item, str) and item.strip() for item in suppressed
-    ):
+    if not is_nonempty_text_list(suppressed):
         errors.append(f"negative case needs non-empty must_not_report: {relative}")
     if expectations.get("output") != "no_findings":
         errors.append(f"negative case must expect no_findings: {relative}")
@@ -37,6 +42,32 @@ def negative_expectation_errors(expectations: dict, relative: Path) -> list[str]
         errors.append(f"negative case must have empty must_report: {relative}")
     if expectations.get("prefixes") != []:
         errors.append(f"negative case must have empty prefixes: {relative}")
+    return errors
+
+
+def mixed_noise_errors(case: dict, relative: Path) -> list[str]:
+    errors = []
+    if case.get("kind") != "positive":
+        errors.append(f"mixed-noise case must be positive: {relative}")
+    for field in ("source", "ecosystem"):
+        value = case.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"mixed-noise case needs {field}: {relative}")
+    if case.get("source") not in (None, "original-synthetic"):
+        for field in ("license", "attribution", "transformation", "redistribution_basis"):
+            value = case.get(field)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"externally derived case needs {field}: {relative}")
+    for field in ("assumptions", "limitations", "expected_evidence"):
+        value = case.get(field)
+        if not is_nonempty_text_list(value):
+            errors.append(f"mixed-noise case needs non-empty {field}: {relative}")
+    expectations = case.get("expectations", {})
+    if not all(
+        is_nonempty_text_list(expectations.get(field))
+        for field in ("must_report", "must_not_report")
+    ):
+        errors.append(f"mixed-noise case needs valid and invalid candidates: {relative}")
     return errors
 
 
@@ -52,6 +83,7 @@ def main() -> int:
     observed_action_levels: set[str] = set()
     observed_viewpoints: set[str] = set()
     negative_categories: set[str] = set()
+    mixed_noise_cases = 0
     for case_file in case_files:
         relative = case_file.relative_to(ROOT)
         try:
@@ -85,6 +117,9 @@ def main() -> int:
                 languages.add(request.get("language", ""))
 
         expectations = case.get("expectations", {})
+        if case.get("evaluation_type") == "mixed-noise":
+            mixed_noise_cases += 1
+            errors.extend(mixed_noise_errors(case, relative))
         if kind == "negative":
             category = case.get("false_positive_category")
             if not isinstance(category, str) or not category.strip():
@@ -157,6 +192,11 @@ def main() -> int:
     if missing_categories:
         errors.append(
             f"negative cases must cover {sorted(missing_categories)}"
+        )
+    if mixed_noise_cases < MINIMUM_MIXED_NOISE_CASES:
+        errors.append(
+            f"expected at least {MINIMUM_MIXED_NOISE_CASES} mixed-noise cases, "
+            f"found {mixed_noise_cases}"
         )
 
     if errors:
