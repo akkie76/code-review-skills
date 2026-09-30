@@ -15,6 +15,6 @@ def reserve(transport, audit, request_id: str, sku: str, quantity: int) -> dict:
         except TransportTimeout:
             if attempt == 1:
                 raise
-            record_retry(audit, headers, request_id)
+            record_retry(audit, headers)
 
     raise AssertionError("unreachable")
