@@ -28,10 +28,20 @@ purpose-built examples, not copied OSS code. The Java fixtures assume Java 17;
 the Go fixtures assume Go 1.22 and the standard behavior of `len` on nil slices.
 The fixture validator checks patch applicability. CI also runs
 `make language-check`: after applying each patch in an isolated temporary
-directory, it compiles Java 17 sources and runs `gofmt` and `go test` for Go
-1.22 modules. This check can be run locally when those runtimes are installed;
-Go dependency downloads are disabled. Neither check establishes that an agent
-actually suppresses false positives.
+directory, it compiles Java 17 sources, runs `gofmt` and `go test` for Go 1.22
+modules, and compiles Python source files. This check can be run locally when
+those runtimes are installed; Go dependency downloads are disabled. Neither
+check establishes that an agent actually suppresses false positives.
+
+The mixed-noise cases (`realistic-go-directory`, `realistic-java-fulfillment`,
+and `realistic-python-profile`) combine actionable changes with unrelated,
+plausible changes. Their `case.json` files record the ecosystem, assumptions,
+expected cross-file evidence, source, and limitations. All three are original
+synthetic examples; no external OSS source is redistributed. Evaluate every
+concern, including candidates listed under `must_not_report`, rather than
+using diff size or the number of findings as a quality measure. The wider
+suite also contains JavaScript cases, giving meaningful examples in four
+languages overall.
 
 ## Manual agent evaluation
 
