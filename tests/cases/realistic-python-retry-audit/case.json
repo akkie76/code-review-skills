@@ -12,8 +12,8 @@
     "The fixture validator checks patch applicability and Python syntax, not a live transport failure or agent review quality."
   ],
   "expected_evidence": [
-    "client.py newly adds Idempotency-Key to a shared headers dictionary and reuses that dictionary for both attempts.",
-    "audit.py newly redacts Idempotency-Key through visible_request_headers, but aliases the outbound headers instead of copying them; record_retry runs after the first timeout and before retry.",
+    "The baseline client sends Idempotency-Key on both attempts and passes a copy to record_retry; the patch passes the original headers dictionary instead.",
+    "The baseline audit redacts Idempotency-Key from a copy. The patched visible_request_headers aliases its argument; record_retry runs after the first timeout and before retry.",
     "The receipt and attempt-summary refactors preserve previous display values and do not affect transport behavior."
   ],
   "requests": [
@@ -22,7 +22,7 @@
   ],
   "expectations": {
     "must_report": [
-      "The new idempotency header and the audit redaction change interact: after the first timeout, visible_request_headers removes Idempotency-Key from the same dictionary reserve passes to the transport, so the second attempt lacks the key and may duplicate a reservation already accepted by the service."
+      "Passing the original headers dictionary to record_retry and changing audit redaction to mutate its argument interact: after the first timeout, visible_request_headers removes Idempotency-Key from the same dictionary reserve passes to the transport, so the second attempt lacks the key and may duplicate a reservation already accepted by the service. Neither change alone breaks retry idempotency."
     ],
     "must_not_report": [
       "Flag the receipt formatting extraction as a behavior change; it preserves the same text for all inputs.",

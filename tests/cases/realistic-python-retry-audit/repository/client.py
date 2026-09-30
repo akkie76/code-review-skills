@@ -6,7 +6,7 @@ class TransportTimeout(Exception):
 
 
 def reserve(transport, audit, request_id: str, sku: str, quantity: int) -> dict:
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Idempotency-Key": request_id}
     payload = {"sku": sku, "quantity": quantity}
 
     for attempt in range(2):
@@ -15,6 +15,6 @@ def reserve(transport, audit, request_id: str, sku: str, quantity: int) -> dict:
         except TransportTimeout:
             if attempt == 1:
                 raise
-            record_retry(audit, headers)
+            record_retry(audit, headers.copy())
 
     raise AssertionError("unreachable")

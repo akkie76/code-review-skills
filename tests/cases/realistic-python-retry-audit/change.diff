@@ -37,10 +37,10 @@ index 101a97b..e0bd407 100644
 +    normalized = [normalize_outcome(outcome) for outcome in outcomes]
 +    return ", ".join(normalized)
 diff --git a/audit.py b/audit.py
-index 665ebc4..682e5de 100644
+index aa05ec5..682e5de 100644
 --- a/audit.py
 +++ b/audit.py
-@@ -1,4 +1,16 @@
+@@ -1,5 +1,16 @@
 +SENSITIVE_HEADERS = ("Authorization", "Idempotency-Key")
 +
 +
@@ -54,6 +54,7 @@ index 665ebc4..682e5de 100644
  def record_retry(audit, headers: dict[str, str]) -> None:
 -    visible_headers = headers.copy()
 -    visible_headers.pop("Authorization", None)
+-    visible_headers.pop("Idempotency-Key", None)
 -    audit.write({"event": "retry", "headers": visible_headers})
 +    visible_headers = visible_request_headers(headers)
 +    audit.write({
@@ -61,10 +62,10 @@ index 665ebc4..682e5de 100644
 +        "headers": visible_headers,
 +    })
 diff --git a/client.py b/client.py
-index 3fffb5b..4109555 100644
+index 17a9176..4109555 100644
 --- a/client.py
 +++ b/client.py
-@@ -5,15 +5,30 @@ class TransportTimeout(Exception):
+@@ -5,16 +5,31 @@ class TransportTimeout(Exception):
      pass
  
  
@@ -84,7 +85,7 @@ index 3fffb5b..4109555 100644
 +
 +
  def reserve(transport, audit, request_id: str, sku: str, quantity: int) -> dict:
--    headers = {"Content-Type": "application/json"}
+-    headers = {"Content-Type": "application/json", "Idempotency-Key": request_id}
 -    payload = {"sku": sku, "quantity": quantity}
 +    headers = request_headers(request_id)
 +    payload = reservation_payload(sku, quantity)
@@ -98,8 +99,10 @@ index 3fffb5b..4109555 100644
 -            if attempt == 1:
 +            if attempt + 1 == MAX_ATTEMPTS:
                  raise
-             record_retry(audit, headers)
+-            record_retry(audit, headers.copy())
++            record_retry(audit, headers)
  
+     raise AssertionError("unreachable")
 diff --git a/receipt.py b/receipt.py
 index 68f1c50..faf12b5 100644
 --- a/receipt.py
