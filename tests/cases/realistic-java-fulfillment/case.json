@@ -13,7 +13,7 @@
   ],
   "expected_evidence": [
     "Fulfillment sends a notice before calling the unchanged OrderStore.save method, which may throw IOException.",
-    "RetryPolicy now accepts completedAttempts equal to maxAttempts, contrary to the documented inclusive attempt limit.",
+    "RetryPolicy now accepts completedAttempts equal to maxAttempts, even though maxAttempts includes the initial attempt.",
     "The formatter and constant extractions preserve their previous outputs."
   ],
   "requests": [

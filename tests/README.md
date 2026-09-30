@@ -34,9 +34,11 @@ those runtimes are installed; Go dependency downloads are disabled. Neither
 check establishes that an agent actually suppresses false positives.
 
 The mixed-noise cases (`realistic-go-directory`, `realistic-java-fulfillment`,
-and `realistic-python-profile`) combine actionable changes with unrelated,
-plausible changes. Their `case.json` files record the ecosystem, assumptions,
-expected cross-file evidence, source, and limitations. All three are original
+`realistic-python-profile`, and `realistic-python-retry-audit`) combine actionable
+changes with unrelated, plausible changes. The retry/audit case also requires
+following the interaction between two changed files across a larger diff.
+Their `case.json` files record the ecosystem, assumptions, expected cross-file
+evidence, source, and limitations. All four are original
 synthetic examples; no external OSS source is redistributed. Evaluate every
 concern, including candidates listed under `must_not_report`, rather than
 using diff size or the number of findings as a quality measure. The wider

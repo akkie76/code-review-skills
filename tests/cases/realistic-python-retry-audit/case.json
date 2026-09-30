@@ -1,0 +1,34 @@
+{
+  "id": "realistic-python-retry-audit",
+  "kind": "positive",
+  "evaluation_type": "mixed-noise",
+  "source": "original-synthetic",
+  "ecosystem": "Python 3.11 standard library; no third-party dependencies",
+  "assumptions": [
+    "A transport timeout does not prove the first reservation failed; the service deduplicates only when retry attempts carry the same idempotency key.",
+    "The audit event is written before the retry and must omit the idempotency key."
+  ],
+  "limitations": [
+    "The fixture validator checks patch applicability and Python syntax, not a live transport failure or agent review quality."
+  ],
+  "expected_evidence": [
+    "client.py newly adds Idempotency-Key to a shared headers dictionary and reuses that dictionary for both attempts.",
+    "audit.py newly redacts Idempotency-Key through visible_request_headers, but aliases the outbound headers instead of copying them; record_retry runs after the first timeout and before retry.",
+    "The receipt and attempt-summary refactors preserve previous display values and do not affect transport behavior."
+  ],
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The new idempotency header and the audit redaction change interact: after the first timeout, visible_request_headers removes Idempotency-Key from the same dictionary reserve passes to the transport, so the second attempt lacks the key and may duplicate a reservation already accepted by the service."
+    ],
+    "must_not_report": [
+      "Flag the receipt formatting extraction as a behavior change; it preserves the same text for all inputs.",
+      "Flag the attempt summary extraction or constants as defects without a concrete failing path."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}

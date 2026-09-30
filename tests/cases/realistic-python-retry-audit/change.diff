@@ -1,0 +1,163 @@
+diff --git a/client.py b/client.py
+--- a/client.py
++++ b/client.py
+@@ -1,20 +1,35 @@
+-from audit import record_retry
+-
+-
+-class TransportTimeout(Exception):
+-    pass
+-
+-
+-def reserve(transport, audit, request_id: str, sku: str, quantity: int) -> dict:
+-    headers = {"Content-Type": "application/json"}
+-    payload = {"sku": sku, "quantity": quantity}
+-
+-    for attempt in range(2):
+-        try:
+-            return transport.post("/reservations", payload, headers)
+-        except TransportTimeout:
+-            if attempt == 1:
+-                raise
+-            record_retry(audit, headers, request_id)
+-
+-    raise AssertionError("unreachable")
++from audit import record_retry
++
++
++class TransportTimeout(Exception):
++    pass
++
++
++MAX_ATTEMPTS = 2
++RESERVATION_PATH = "/reservations"
++
++
++def reservation_payload(sku: str, quantity: int) -> dict[str, object]:
++    return {"sku": sku, "quantity": quantity}
++
++
++def request_headers(request_id: str) -> dict[str, str]:
++    return {
++        "Content-Type": "application/json",
++        "Idempotency-Key": request_id,
++    }
++
++
++def reserve(transport, audit, request_id: str, sku: str, quantity: int) -> dict:
++    headers = request_headers(request_id)
++    payload = reservation_payload(sku, quantity)
++
++    for attempt in range(MAX_ATTEMPTS):
++        try:
++            return transport.post(RESERVATION_PATH, payload, headers)
++        except TransportTimeout:
++            if attempt + 1 == MAX_ATTEMPTS:
++                raise
++            record_retry(audit, headers, request_id)
++
++    raise AssertionError("unreachable")
+diff --git a/audit.py b/audit.py
+--- a/audit.py
++++ b/audit.py
+@@ -1,5 +1,17 @@
+-def record_retry(audit, headers: dict[str, str], request_id: str) -> None:
+-    visible_headers = headers.copy()
+-    visible_headers.pop("Authorization", None)
+-    audit.write({"event": "retry", "request_id": request_id,
+-                 "headers": visible_headers})
++SENSITIVE_HEADERS = ("Authorization", "Idempotency-Key")
++
++
++def visible_request_headers(headers: dict[str, str]) -> dict[str, str]:
++    visible_headers = headers
++    for name in SENSITIVE_HEADERS:
++        visible_headers.pop(name, None)
++    return visible_headers
++
++
++def record_retry(audit, headers: dict[str, str], request_id: str) -> None:
++    visible_headers = visible_request_headers(headers)
++    audit.write({
++        "event": "retry",
++        "request_id": request_id,
++        "headers": visible_headers,
++    })
+diff --git a/receipt.py b/receipt.py
+--- a/receipt.py
++++ b/receipt.py
+@@ -1,6 +1,15 @@
+-def format_receipt(sku: str, quantity: int, reference: str) -> str:
+-    return "Reserved " + str(quantity) + " x " + sku + " (" + reference + ")"
+-
+-
+-def format_line(sku: str, quantity: int) -> str:
+-    return str(quantity) + " x " + sku
++RECEIPT_PREFIX = "Reserved "
++
++
++def format_line(sku: str, quantity: int) -> str:
++    return f"{quantity} x {sku}"
++
++
++def format_reference(reference: str) -> str:
++    return f"({reference})"
++
++
++def format_receipt(sku: str, quantity: int, reference: str) -> str:
++    line = format_line(sku, quantity)
++    suffix = format_reference(reference)
++    return RECEIPT_PREFIX + line + " " + suffix
+diff --git a/attempts.py b/attempts.py
+--- a/attempts.py
++++ b/attempts.py
+@@ -1,4 +1,12 @@
+-def summarize_attempts(outcomes: list[str]) -> str:
+-    if not outcomes:
+-        return "No attempts"
+-    return ", ".join(outcomes)
++EMPTY_SUMMARY = "No attempts"
++
++
++def normalize_outcome(outcome: str) -> str:
++    return outcome
++
++
++def summarize_attempts(outcomes: list[str]) -> str:
++    if not outcomes:
++        return EMPTY_SUMMARY
++    normalized = [normalize_outcome(outcome) for outcome in outcomes]
++    return ", ".join(normalized)
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -1,9 +1,20 @@
+-# Inventory reservation client
+-
+-`reserve` submits one reservation and retries a timeout once. The caller
+-provides a stable `request_id` for the reservation. The remote service uses
+-that ID as an idempotency key to prevent duplicate reservations when the
+-first request may have succeeded.
+-
+-An audit event is written before retrying. The audit trail must not contain
+-the idempotency key. Receipt and attempt summaries are for display only.
++# Inventory reservation client
++
++`reserve` submits one reservation and retries a timeout once. The caller
++provides a stable `request_id` for the reservation. The remote service uses
++that ID as an idempotency key to prevent duplicate reservations when the
++first request may have succeeded.
++
++An audit event is written before retrying. The audit trail must not contain
++the idempotency key. Receipt and attempt summaries are for display only.
++
++## Public API
++
++`reserve(transport, audit, request_id, sku, quantity)` returns the remote
++response. A `TransportTimeout` after the final attempt propagates to the
++caller. The transport receives the same payload and the same idempotency key
++on every attempt for a reservation.
++
++`format_receipt` keeps the human-readable reservation label stable.
++`summarize_attempts` joins attempt outcomes for diagnostics; it does not
++control transport behavior or decide whether another request is safe.
