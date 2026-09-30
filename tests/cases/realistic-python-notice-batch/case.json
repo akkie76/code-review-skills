@@ -1,0 +1,37 @@
+{
+  "id": "realistic-python-notice-batch",
+  "kind": "positive",
+  "evaluation_type": "mixed-noise",
+  "source": "original-synthetic",
+  "ecosystem": "Python 3.11 standard library; in-memory tenant-scoped store",
+  "assumptions": [
+    "A successful batch must send every notice pending for the requested tenant when the batch starts.",
+    "mark_sent removes the notice from later pending queries; the sender may raise DeliveryError, and a failed notice must stay pending."
+  ],
+  "limitations": [
+    "The patch's unit tests cover one page and delivery failure, but not a batch spanning multiple pages.",
+    "CI checks Python syntax after applying the patch; it does not grade agent review output."
+  ],
+  "expected_evidence": [
+    "dispatcher.py increments an offset after marking each processed notice sent.",
+    "store.py pending_page slices a fresh list of only unsent notices; mark_sent therefore shifts the remaining notices before the next offset is applied.",
+    "With five pending notices and page size two, the first page sends n1/n2, the next page starts at offset two in the remaining n3/n4/n5 list and sends n5, leaving n3/n4 pending.",
+    "Envelope extraction, report formatting, preview formatting, and new audit boundary events do not independently change delivery decisions."
+  ],
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "The new offset-based pagination skips pending notices because each successful send calls mark_sent, shrinking the list that pending_page slices on the next query. A batch larger than one page can finish while some notices remain unsent."
+    ],
+    "must_not_report": [
+      "Claim the sender's envelope extraction changes recipient, subject, or body; it forwards the same values.",
+      "Report the report or preview formatting refactors as regressions without a changed output.",
+      "Treat the new batch audit boundary events as the cause of skipped delivery; they do not modify store state."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}

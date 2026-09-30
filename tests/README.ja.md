@@ -30,11 +30,15 @@ Goの依存関係のダウンロードは無効です。いずれの検査も、
 誤検知を抑制するかは検証しません。
 
 `realistic-go-directory`、`realistic-java-fulfillment`、
-`realistic-python-profile`、`realistic-python-retry-audit`は、対応が必要な変更と
-無関係でもっともらしい変更を組み合わせたcaseです。再試行と監査のcaseでは、
-より大きな差分の中で、変更された2ファイル間の相互作用も追跡する必要があります。
+`realistic-python-profile`、`realistic-python-retry-audit`、
+`realistic-python-notice-batch`は、対応が必要な変更と無関係でもっともらしい変更を
+組み合わせたcaseです。再試行と監査のcaseでは、変更された2ファイル間の相互作用を
+追跡します。通知の一括送信caseは9ファイル・186変更行のより大きな差分で、
+ページング、監査イベント、表示処理のリファクタ、テストをまとめて確認します。
+不具合の判断には、送信済み通知がページ間で未送信集合から消えることの追跡が必要です。
+これらは評価case間の相対的な差分規模であり、品質の行数基準ではありません。
 各`case.json`に言語環境、前提、ファイルをまたいで確認すべき根拠、出典、評価上の限界を
-記録しています。4件とも独自に作成した合成例であり、外部OSSの
+記録しています。5件とも独自に作成した合成例であり、外部OSSの
 ソースコードは再配布しません。差分の行数や指摘数で品質を判断せず、
 `must_not_report`の候補も含めて各関心事を確認します。既存のJavaScriptのcaseを
 含めると、評価セット全体で4言語の実質的な例を扱います。
@@ -45,7 +49,8 @@ CodexとClaude Codeの両方で、caseごとに次を実施します。
 
 1. 評価対象エージェントへ生成済みパッケージをインストールする
 2. caseの`repository/`以下を含む隔離された一時リポジトリを作る
-3. `change.diff`をcommitせずに適用する
+3. `change.diff`をcommitせずに適用する。新規ファイルがある場合は、そのファイルに
+   `git add -N`を実行し、内容をstageせずに`git diff`へ表示させる
 4. `case.json`の各requestを、期待結果のヒントを加えずに送信する
 5. `expectations`の全項目を満たすか記録する。文章ではなく挙動と根拠を比較する
 6. 他のfixtureのcontextを避けるため、新しい会話で次のcaseを評価する

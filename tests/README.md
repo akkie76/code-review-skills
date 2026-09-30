@@ -34,12 +34,16 @@ those runtimes are installed; Go dependency downloads are disabled. Neither
 check establishes that an agent actually suppresses false positives.
 
 The mixed-noise cases (`realistic-go-directory`, `realistic-java-fulfillment`,
-`realistic-python-profile`, and `realistic-python-retry-audit`) combine actionable
-changes with unrelated, plausible changes. The retry/audit case also requires
-following the interaction between two changed files across a larger diff.
-Their `case.json` files record the ecosystem, assumptions, expected cross-file
-evidence, source, and limitations. All four are original
-synthetic examples; no external OSS source is redistributed. Evaluate every
+`realistic-python-profile`, `realistic-python-retry-audit`, and
+`realistic-python-notice-batch`) combine actionable changes with unrelated,
+plausible changes. The retry/audit case requires following an interaction
+between two changed files. The notice-batch case has a larger, nine-file patch
+with 186 changed lines: pagination, audit events, display refactors, and tests
+must be reviewed together. Its defect requires tracing how sent notices leave
+the pending set between pages. These are relative fixture sizes, not a quality
+threshold. Each `case.json` records the ecosystem, assumptions, expected
+cross-file evidence, source, and limitations. All five are original synthetic
+examples; no external OSS source is redistributed. Evaluate every
 concern, including candidates listed under `must_not_report`, rather than
 using diff size or the number of findings as a quality measure. The wider
 suite also contains JavaScript cases, giving meaningful examples in four
@@ -52,7 +56,9 @@ Run each case separately with both Codex and Claude Code:
 1. Install the generated package for the agent under test.
 2. Create an isolated temporary repository containing the files under the
    case's `repository/` directory.
-3. Apply `change.diff` without committing it.
+3. Apply `change.diff` without committing it. If the patch adds files, use
+   `git add -N` on those files so `git diff` includes them without staging
+   their contents.
 4. Submit each request in `case.json` without adding hints about the expected
    result.
 5. Record whether every item under `expectations` was satisfied. Compare
