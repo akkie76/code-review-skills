@@ -33,7 +33,7 @@ diff --git a/headers.go b/headers.go
  func ResponseHeaders(requestID string) map[string]string {
 -	return map[string]string{"X-Request-ID": requestID, "Content-Type": "application/json"}
 +	return map[string]string{
-+		requestIDHeader: requestID,
++		requestIDHeader:   requestID,
 +		contentTypeHeader: "application/json",
 +	}
  }
