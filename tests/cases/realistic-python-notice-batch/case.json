@@ -31,6 +31,9 @@
       "Report the report or preview formatting refactors as regressions without a changed output.",
       "Treat the new batch audit boundary events as the cause of skipped delivery; they do not modify store state."
     ],
+    "may_report": [
+      "A SHOULD(Test) finding that the new tests omit a multi-page batch is valid but optional; it does not replace the required pagination defect."
+    ],
     "prefixes": ["MUST(Functionality)"],
     "output": "findings"
   }

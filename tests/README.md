@@ -29,7 +29,8 @@ the Go fixtures assume Go 1.22 and the standard behavior of `len` on nil slices.
 The fixture validator checks patch applicability. CI also runs
 `make language-check`: after applying each patch in an isolated temporary
 directory, it compiles Java 17 sources, runs `gofmt` and `go test` for Go 1.22
-modules, and compiles Python source files. This check can be run locally when
+modules, and compiles Python source files. Where the patched Python fixture has
+`test_*.py` files, it also runs their unit tests. This check can be run locally when
 those runtimes are installed; Go dependency downloads are disabled. Neither
 check establishes that an agent actually suppresses false positives.
 
@@ -38,7 +39,7 @@ The mixed-noise cases (`realistic-go-directory`, `realistic-java-fulfillment`,
 `realistic-python-notice-batch`) combine actionable changes with unrelated,
 plausible changes. The retry/audit case requires following an interaction
 between two changed files. The notice-batch case has a larger, nine-file patch
-with 186 changed lines: pagination, audit events, display refactors, and tests
+with 173 changed lines: pagination, audit events, display refactors, and tests
 must be reviewed together. Its defect requires tracing how sent notices leave
 the pending set between pages. These are relative fixture sizes, not a quality
 threshold. Each `case.json` records the ecosystem, assumptions, expected
@@ -67,14 +68,16 @@ Run each case separately with both Codex and Claude Code:
    fixture.
 
 An evaluation passes only when all `must_report`, `must_not_report`, `prefixes`,
-and `output` expectations hold. Any additional finding must independently meet
-the skill's evidence requirements; otherwise record it as a false positive.
+and `output` expectations hold. `may_report`, when present, records valid but
+optional findings; it does not replace a required finding. Any other additional
+finding must independently meet the skill's evidence requirements; otherwise
+record it as a false positive.
 Evaluate at least one negative case with both English and Japanese requests
 in each agent; do not infer cross-language behavior from the fixture schema.
 
-Use a dated local evaluation record while the project is private. Do not
-commit model transcripts when they contain machine paths, private repository
-content, or unpublished correspondence.
+The public repository may contain dated, sanitized evaluation summaries.
+Keep raw model transcripts outside the repository. Never commit machine paths,
+private repository content, credentials, or unpublished correspondence.
 
 Use [the manual evaluation record](RESULT_TEMPLATE.md) so product, model,
 revision, language, and unexpected output are recorded consistently.

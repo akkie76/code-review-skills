@@ -90,7 +90,7 @@ diff --git a/model.py b/model.py
 index 17f7b5f..326d0ce 100644
 --- a/model.py
 +++ b/model.py
-@@ -9,3 +9,20 @@ class Notice:
+@@ -9,3 +9,18 @@ class Notice:
      subject: str
      body: str
      sent: bool = False
@@ -98,7 +98,6 @@ index 17f7b5f..326d0ce 100644
 +
 +@dataclass(frozen=True)
 +class DeliveryEnvelope:
-+    notice_id: str
 +    recipient: str
 +    subject: str
 +    body: str
@@ -106,7 +105,6 @@ index 17f7b5f..326d0ce 100644
 +
 +def envelope_for(notice: Notice) -> DeliveryEnvelope:
 +    return DeliveryEnvelope(
-+        notice_id=notice.id,
 +        recipient=notice.recipient,
 +        subject=notice.subject,
 +        body=notice.body,
@@ -115,7 +113,7 @@ diff --git a/report.py b/report.py
 index 9d5ef35..38d928a 100644
 --- a/report.py
 +++ b/report.py
-@@ -1,7 +1,35 @@
+@@ -1,7 +1,24 @@
 +from dataclasses import dataclass
 +
 +
@@ -142,17 +140,6 @@ index 9d5ef35..38d928a 100644
  
  def id_line(sent_ids: list[str]) -> str:
      return ", ".join(sent_ids) if sent_ids else "none"
-+
-+
-+def report_lines(tenant_id: str, sent_ids: list[str]) -> list[str]:
-+    return [
-+        summary_line(tenant_id, sent_ids),
-+        "IDs: " + id_line(sent_ids),
-+    ]
-+
-+
-+def report_text(tenant_id: str, sent_ids: list[str]) -> str:
-+    return "\n".join(report_lines(tenant_id, sent_ids))
 diff --git a/sender.py b/sender.py
 index 02c78e3..0e6c8de 100644
 --- a/sender.py

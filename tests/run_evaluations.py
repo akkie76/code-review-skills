@@ -130,6 +130,10 @@ def main() -> int:
         missing = REQUIRED_EXPECTATIONS - expectations.keys()
         if missing:
             errors.append(f"missing expectations {sorted(missing)}: {relative}")
+        if "may_report" in expectations and not is_nonempty_text_list(
+            expectations["may_report"]
+        ):
+            errors.append(f"invalid optional may_report in {relative}")
         if expectations.get("output") not in VALID_RESULTS:
             errors.append(f"invalid expected output in {relative}")
         prefixes = expectations.get("prefixes")
