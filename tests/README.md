@@ -78,6 +78,8 @@ content, or unpublished correspondence.
 
 Use [the manual evaluation record](RESULT_TEMPLATE.md) so product, model,
 revision, language, and unexpected output are recorded consistently.
+See the [2026-10-01 evaluation summary](results/2026-10-01.md) for the first
+fresh-session sample; its limits and pending Claude Code runs are explicit.
 
 ## Multi-agent evaluation boundary
 
