@@ -25,12 +25,16 @@ REQUIRED_FALSE_POSITIVE_CATEGORIES = {
 MINIMUM_MIXED_NOISE_CASES = 3
 
 
+def is_nonempty_text_list(value: object) -> bool:
+    return isinstance(value, list) and bool(value) and all(
+        isinstance(item, str) and item.strip() for item in value
+    )
+
+
 def negative_expectation_errors(expectations: dict, relative: Path) -> list[str]:
     errors = []
     suppressed = expectations.get("must_not_report")
-    if not isinstance(suppressed, list) or not suppressed or not all(
-        isinstance(item, str) and item.strip() for item in suppressed
-    ):
+    if not is_nonempty_text_list(suppressed):
         errors.append(f"negative case needs non-empty must_not_report: {relative}")
     if expectations.get("output") != "no_findings":
         errors.append(f"negative case must expect no_findings: {relative}")
@@ -56,12 +60,13 @@ def mixed_noise_errors(case: dict, relative: Path) -> list[str]:
                 errors.append(f"externally derived case needs {field}: {relative}")
     for field in ("assumptions", "limitations", "expected_evidence"):
         value = case.get(field)
-        if not isinstance(value, list) or not value or not all(
-            isinstance(item, str) and item.strip() for item in value
-        ):
+        if not is_nonempty_text_list(value):
             errors.append(f"mixed-noise case needs non-empty {field}: {relative}")
     expectations = case.get("expectations", {})
-    if not expectations.get("must_report") or not expectations.get("must_not_report"):
+    if not all(
+        is_nonempty_text_list(expectations.get(field))
+        for field in ("must_report", "must_not_report")
+    ):
         errors.append(f"mixed-noise case needs valid and invalid candidates: {relative}")
     return errors
 

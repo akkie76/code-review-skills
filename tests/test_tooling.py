@@ -173,6 +173,20 @@ class EvaluationFixtureTests(unittest.TestCase):
         self.assertEqual(len(errors), 2)
         self.assertTrue(any("expected_evidence" in error for error in errors))
         self.assertTrue(any("valid and invalid candidates" in error for error in errors))
+        for field in ("must_report", "must_not_report"):
+            invalid_values = (
+                "candidate", {"finding": "candidate"}, [""], ["  "],
+                [42], ["valid", None],
+            )
+            for invalid in invalid_values:
+                with self.subTest(field=field, invalid=invalid):
+                    malformed = {
+                        **case,
+                        "expectations": {**case["expectations"], field: invalid},
+                    }
+                    errors = run_evaluations.mixed_noise_errors(malformed, case_path)
+                    self.assertEqual(len(errors), 1)
+                    self.assertIn("valid and invalid candidates", errors[0])
         external = {**case, "source": "https://example.org/source"}
         errors = run_evaluations.mixed_noise_errors(external, case_path)
         self.assertEqual(len(errors), 4)
