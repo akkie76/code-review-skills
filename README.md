@@ -63,6 +63,8 @@ it with `/evidence-code-review` or ask Claude Code to use the
 
 The installed package records its version in a `skill-version` comment near
 the top of `SKILL.md`. This repository's current version is in `VERSION`.
+See the [versioning and compatibility policy](docs/VERSIONING.md) for the
+documented output contract and release-version rules.
 
 Review a skill before installing it. A skill supplies instructions to an
 agent and should be treated like other executable development configuration.

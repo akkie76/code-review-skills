@@ -15,6 +15,71 @@ from tests import check_language_fixtures, run_evaluations
 
 
 class ReleaseCheckTests(unittest.TestCase):
+    def test_version_and_generated_package_markers_must_agree(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "VERSION").write_text("0.1.0-beta.2\n", encoding="utf-8")
+            for agent in ("codex", "claude-code"):
+                package = root / "dist" / agent / "evidence-code-review/SKILL.md"
+                package.parent.mkdir(parents=True)
+                package.write_text("<!-- skill-version: v0.1.0-beta.2 -->\n", encoding="utf-8")
+            with patch.object(release_check, "ROOT", root):
+                self.assertEqual(release_check.version_consistency_errors(), [])
+                (root / "VERSION").write_text("0.1.0-beta.02\n", encoding="utf-8")
+                self.assertIn(
+                    "valid SemVer", release_check.version_consistency_errors()[0]
+                )
+                (root / "VERSION").write_text("0.1.0-beta.2\n", encoding="utf-8")
+                package.write_text("<!-- skill-version: v0.1.0-beta.1 -->\n", encoding="utf-8")
+                errors = release_check.version_consistency_errors()
+                self.assertEqual(len(errors), 1)
+                self.assertIn("claude-code", errors[0])
+
+    def test_tagged_release_checks_both_languages_and_head_tag(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            version = "0.1.0-beta.2"
+            tag = f"v{version}"
+            (root / "VERSION").write_text(version + "\n", encoding="utf-8")
+            for agent in ("codex", "claude-code"):
+                package = root / "dist" / agent / "evidence-code-review/SKILL.md"
+                package.parent.mkdir(parents=True)
+                package.write_text(f"<!-- skill-version: {tag} -->\n", encoding="utf-8")
+            releases = root / "docs/releases"
+            releases.mkdir(parents=True)
+            for suffix in ("", ".ja"):
+                (root / f"CHANGELOG{suffix}.md").write_text(
+                    f"## [{version}] - 2026-10-02\n"
+                    f"[{version}]: https://github.com/akkie76/code-review-skills/releases/tag/{tag}\n",
+                    encoding="utf-8",
+                )
+                (releases / f"{tag}{suffix}.md").write_text(
+                    f"# Code Review Skills {tag}\n", encoding="utf-8"
+                )
+            with patch.object(release_check, "ROOT", root), patch.object(
+                release_check, "git", return_value=tag + "\n"
+            ) as git_command:
+                self.assertEqual(release_check.version_consistency_errors(True), [])
+                git_command.assert_called_with("tag", "--points-at", "HEAD")
+                git_command.return_value = ""
+                self.assertIn(
+                    f"Git tag {tag} must point to HEAD",
+                    release_check.version_consistency_errors(True),
+                )
+                git_command.return_value = tag + "\n"
+                (root / "CHANGELOG.ja.md").write_text("## [Unreleased]\n", encoding="utf-8")
+                errors = release_check.version_consistency_errors(True)
+                self.assertTrue(
+                    any("Japanese changelog needs a dated" in error for error in errors)
+                )
+                (releases / f"{tag}.ja.md").unlink()
+                self.assertTrue(
+                    any(
+                        "missing Japanese release notes" in error
+                        for error in release_check.version_consistency_errors(True)
+                    )
+                )
+
     def test_detects_supported_github_token_formats(self) -> None:
         pattern = release_check.SECRET_PATTERNS["GitHub token"]
         legacy_token = "gh" + "p_" + "a" * 36
