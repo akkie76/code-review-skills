@@ -147,6 +147,7 @@ class EvaluationFixtureTests(unittest.TestCase):
             "must_report": ["A finding"],
             "prefixes": ["MUST(Functionality)"],
             "must_not_report": [],
+            "may_report": ["A valid but optional finding"],
         }
         for field, value in invalid_values.items():
             with self.subTest(field=field):
@@ -156,6 +157,12 @@ class EvaluationFixtureTests(unittest.TestCase):
                 )
                 self.assertEqual(len(errors), 1)
                 self.assertIn(field if field != "output" else "no_findings", errors[0])
+        self.assertEqual(
+            len(run_evaluations.negative_expectation_errors(
+                {**valid, "may_report": []}, case_path
+            )),
+            1,
+        )
 
     def test_mixed_noise_cases_need_evidence_and_both_candidate_types(self) -> None:
         case = {

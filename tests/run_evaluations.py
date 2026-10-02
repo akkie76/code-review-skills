@@ -42,6 +42,8 @@ def negative_expectation_errors(expectations: dict, relative: Path) -> list[str]
         errors.append(f"negative case must have empty must_report: {relative}")
     if expectations.get("prefixes") != []:
         errors.append(f"negative case must have empty prefixes: {relative}")
+    if "may_report" in expectations:
+        errors.append(f"negative case must not have may_report: {relative}")
     return errors
 
 
@@ -130,7 +132,7 @@ def main() -> int:
         missing = REQUIRED_EXPECTATIONS - expectations.keys()
         if missing:
             errors.append(f"missing expectations {sorted(missing)}: {relative}")
-        if "may_report" in expectations and not is_nonempty_text_list(
+        if kind != "negative" and "may_report" in expectations and not is_nonempty_text_list(
             expectations["may_report"]
         ):
             errors.append(f"invalid optional may_report in {relative}")

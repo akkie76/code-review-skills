@@ -68,8 +68,9 @@ Run each case separately with both Codex and Claude Code:
    fixture.
 
 An evaluation passes only when all `must_report`, `must_not_report`, `prefixes`,
-and `output` expectations hold. `may_report`, when present, records valid but
-optional findings; it does not replace a required finding. Any other additional
+and `output` expectations hold. `may_report` is available only for non-negative
+cases; it records valid but optional findings and does not replace a required
+finding. Any other additional
 finding must independently meet the skill's evidence requirements; otherwise
 record it as a false positive.
 Evaluate at least one negative case with both English and Japanese requests
