@@ -115,9 +115,15 @@ def version_consistency_errors(check_tag: bool = False) -> list[str]:
 
     if tag not in git("tag", "--points-at", "HEAD").splitlines():
         errors.append(f"Git tag {tag} must point to HEAD")
-    for language, changelog, notes in (
-        ("English", ROOT / "CHANGELOG.md", ROOT / "docs/releases" / f"{tag}.md"),
-        ("Japanese", ROOT / "CHANGELOG.ja.md", ROOT / "docs/releases" / f"{tag}.ja.md"),
+    for language, unreleased_label, changelog, notes in (
+        (
+            "English", "Unreleased", ROOT / "CHANGELOG.md",
+            ROOT / "docs/releases" / f"{tag}.md",
+        ),
+        (
+            "Japanese", "未リリース", ROOT / "CHANGELOG.ja.md",
+            ROOT / "docs/releases" / f"{tag}.ja.md",
+        ),
     ):
         if not changelog.is_file():
             errors.append(f"missing {language} changelog: {changelog.relative_to(ROOT)}")
@@ -128,10 +134,20 @@ def version_consistency_errors(check_tag: bool = False) -> list[str]:
                 rf"(?m)^\[{re.escape(version)}\]: "
                 rf"https://github\.com/akkie76/code-review-skills/releases/tag/{re.escape(tag)}$"
             )
+            unreleased_link = (
+                rf"(?m)^\[{re.escape(unreleased_label)}\]: "
+                rf"https://github\.com/akkie76/code-review-skills/compare/"
+                rf"{re.escape(tag)}\.\.\.HEAD$"
+            )
             if not re.search(dated_section, content):
                 errors.append(f"{language} changelog needs a dated {version} section")
             if not re.search(release_link, content):
                 errors.append(f"{language} changelog needs a {tag} release link")
+            if not re.search(unreleased_link, content):
+                errors.append(
+                    f"{language} changelog needs an {unreleased_label} "
+                    f"comparison link from {tag} to HEAD"
+                )
         if not notes.is_file():
             errors.append(f"missing {language} release notes: {notes.relative_to(ROOT)}")
         elif not notes.read_text(encoding="utf-8").startswith(f"# Code Review Skills {tag}\n"):
