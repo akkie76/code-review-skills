@@ -70,9 +70,15 @@ Run each case separately with both Codex and Claude Code:
 An evaluation passes only when all `must_report`, `must_not_report`, `prefixes`,
 and `output` expectations hold. `may_report` is available only for non-negative
 cases with `output: findings` and at least one `must_report` item; it records
-valid but optional findings and does not replace a required finding. Any other additional
-finding must independently meet the skill's evidence requirements; otherwise
-record it as a false positive.
+valid but optional findings and does not replace a required finding. An optional
+finding can appear as its own comment or as a substantiated point within a
+required finding; a separate comment is not necessary to match `may_report`.
+Neither placement excuses an unsupported claim, and an optional point cannot
+make a missing `must_report` pass. Any other additional finding must
+independently meet the skill's evidence requirements; otherwise record it as a
+false positive. Record whether the Skill was actually invoked separately from
+whether the output matched fixture expectations. An unassisted output match is
+not a passing result for the Skill's review behavior.
 Evaluate at least one negative case with both English and Japanese requests
 in each agent; do not infer cross-language behavior from the fixture schema.
 
@@ -83,7 +89,9 @@ private repository content, credentials, or unpublished correspondence.
 Use [the manual evaluation record](RESULT_TEMPLATE.md) so product, model,
 revision, language, and unexpected output are recorded consistently.
 See the [2026-10-01 evaluation summary](results/2026-10-01.md) for the first
-fresh-session sample; its limits and pending Claude Code runs are explicit.
+fresh-session Codex sample. The [2026-10-02 summary](results/2026-10-02.md)
+records the Claude Code sample, including runs in which the Skill was not
+invoked and issues found outside the fixture expectations.
 
 ## Multi-agent evaluation boundary
 
