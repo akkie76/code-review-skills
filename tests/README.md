@@ -29,17 +29,22 @@ the Go fixtures assume Go 1.22 and the standard behavior of `len` on nil slices.
 The fixture validator checks patch applicability. CI also runs
 `make language-check`: after applying each patch in an isolated temporary
 directory, it compiles Java 17 sources, runs `gofmt` and `go test` for Go 1.22
-modules, and compiles Python source files. This check can be run locally when
+modules, and compiles Python source files. Where the patched Python fixture has
+`test_*.py` files, it also runs their unit tests. This check can be run locally when
 those runtimes are installed; Go dependency downloads are disabled. Neither
 check establishes that an agent actually suppresses false positives.
 
 The mixed-noise cases (`realistic-go-directory`, `realistic-java-fulfillment`,
-`realistic-python-profile`, and `realistic-python-retry-audit`) combine actionable
-changes with unrelated, plausible changes. The retry/audit case also requires
-following the interaction between two changed files across a larger diff.
-Their `case.json` files record the ecosystem, assumptions, expected cross-file
-evidence, source, and limitations. All four are original
-synthetic examples; no external OSS source is redistributed. Evaluate every
+`realistic-python-profile`, `realistic-python-retry-audit`, and
+`realistic-python-notice-batch`) combine actionable changes with unrelated,
+plausible changes. The retry/audit case requires following an interaction
+between two changed files. The notice-batch case has a larger, nine-file patch
+with 173 changed lines: pagination, audit events, display refactors, and tests
+must be reviewed together. Its defect requires tracing how sent notices leave
+the pending set between pages. These are relative fixture sizes, not a quality
+threshold. Each `case.json` records the ecosystem, assumptions, expected
+cross-file evidence, source, and limitations. All five are original synthetic
+examples; no external OSS source is redistributed. Evaluate every
 concern, including candidates listed under `must_not_report`, rather than
 using diff size or the number of findings as a quality measure. The wider
 suite also contains JavaScript cases, giving meaningful examples in four
@@ -52,7 +57,9 @@ Run each case separately with both Codex and Claude Code:
 1. Install the generated package for the agent under test.
 2. Create an isolated temporary repository containing the files under the
    case's `repository/` directory.
-3. Apply `change.diff` without committing it.
+3. Apply `change.diff` without committing it. If the patch adds files, use
+   `git add -N` on those files so `git diff` includes them without staging
+   their contents.
 4. Submit each request in `case.json` without adding hints about the expected
    result.
 5. Record whether every item under `expectations` was satisfied. Compare
@@ -61,17 +68,22 @@ Run each case separately with both Codex and Claude Code:
    fixture.
 
 An evaluation passes only when all `must_report`, `must_not_report`, `prefixes`,
-and `output` expectations hold. Any additional finding must independently meet
-the skill's evidence requirements; otherwise record it as a false positive.
+and `output` expectations hold. `may_report` is available only for non-negative
+cases with `output: findings` and at least one `must_report` item; it records
+valid but optional findings and does not replace a required finding. Any other additional
+finding must independently meet the skill's evidence requirements; otherwise
+record it as a false positive.
 Evaluate at least one negative case with both English and Japanese requests
 in each agent; do not infer cross-language behavior from the fixture schema.
 
-Use a dated local evaluation record while the project is private. Do not
-commit model transcripts when they contain machine paths, private repository
-content, or unpublished correspondence.
+The public repository may contain dated, sanitized evaluation summaries.
+Keep raw model transcripts outside the repository. Never commit machine paths,
+private repository content, credentials, or unpublished correspondence.
 
 Use [the manual evaluation record](RESULT_TEMPLATE.md) so product, model,
 revision, language, and unexpected output are recorded consistently.
+See the [2026-10-01 evaluation summary](results/2026-10-01.md) for the first
+fresh-session sample; its limits and pending Claude Code runs are explicit.
 
 ## Multi-agent evaluation boundary
 

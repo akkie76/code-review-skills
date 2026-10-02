@@ -81,6 +81,11 @@ def check_fixtures() -> int:
 
             if is_python:
                 run([sys.executable, "-m", "compileall", "-q", "."], checkout)
+                if any(checkout.rglob("test_*.py")):
+                    run(
+                        [sys.executable, "-m", "unittest", "discover", "-s", ".", "-p", "test_*.py"],
+                        checkout,
+                    )
                 counts["python"] += 1
 
     if not all(counts.values()):

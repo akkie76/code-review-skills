@@ -84,7 +84,12 @@ class LanguageFixtureTests(unittest.TestCase):
             python_repository = cases / "python-case/repository"
             python_repository.mkdir(parents=True)
             (python_repository / "check.py").write_text("value = 1\n")
+            (python_repository / "test_check.py").write_text("import unittest\n")
             (cases / "python-case/change.diff").write_text("sample patch\n")
+            python_without_tests = cases / "python-no-tests/repository"
+            python_without_tests.mkdir(parents=True)
+            (python_without_tests / "check.py").write_text("value = 1\n")
+            (cases / "python-no-tests/change.diff").write_text("sample patch\n")
 
             with patch.object(check_language_fixtures, "CASES", cases), patch.object(
                 check_language_fixtures, "run"
@@ -96,10 +101,13 @@ class LanguageFixtureTests(unittest.TestCase):
                 self.assertEqual(check_language_fixtures.check_fixtures(), 0)
 
             commands = [invocation.args[0] for invocation in run_command.call_args_list]
-            self.assertEqual([command[0] for command in commands].count("git"), 3)
+            self.assertEqual([command[0] for command in commands].count("git"), 4)
             self.assertIn(["go", "test", "./..."], commands)
             self.assertTrue(any(command[:3] == ["javac", "--release", "17"] for command in commands))
             self.assertTrue(any(command[1:] == ["-m", "compileall", "-q", "."] for command in commands))
+            self.assertEqual(
+                sum(command[1:3] == ["-m", "unittest"] for command in commands), 1
+            )
             go_environment = next(
                 invocation.args[2] for invocation in run_command.call_args_list
                 if invocation.args[0][:2] == ["go", "test"]
@@ -191,6 +199,42 @@ class EvaluationFixtureTests(unittest.TestCase):
         errors = run_evaluations.mixed_noise_errors(external, case_path)
         self.assertEqual(len(errors), 4)
         self.assertTrue(any("redistribution_basis" in error for error in errors))
+
+    def test_optional_findings_require_a_positive_findings_contract(self) -> None:
+        case_path = Path("tests/cases/example/case.json")
+        valid = {
+            "must_report": ["Required defect"],
+            "may_report": ["Optional test gap"],
+            "output": "findings",
+        }
+        self.assertEqual(
+            run_evaluations.optional_expectation_errors(valid, case_path, "positive"),
+            [],
+        )
+        for invalid in ([], [""], [42], "Optional test gap"):
+            with self.subTest(may_report=invalid):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, "may_report": invalid}, case_path, "positive"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn("invalid optional may_report", errors[0])
+        for overrides, expected in (
+            ({"output": "no_findings"}, "findings output"),
+            ({"must_report": []}, "non-empty must_report"),
+        ):
+            with self.subTest(overrides=overrides):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, **overrides}, case_path, "instruction-conflict"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn(expected, errors[0])
+        for may_report in ([], ["Optional test gap"]):
+            with self.subTest(negative_may_report=may_report):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, "may_report": may_report}, case_path, "negative"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn("negative case", errors[0])
 
 
 if __name__ == "__main__":

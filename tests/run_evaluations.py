@@ -45,6 +45,24 @@ def negative_expectation_errors(expectations: dict, relative: Path) -> list[str]
     return errors
 
 
+def optional_expectation_errors(
+    expectations: dict, relative: Path, kind: str
+) -> list[str]:
+    if "may_report" not in expectations:
+        return []
+    if kind == "negative":
+        return [f"negative case must not have may_report: {relative}"]
+
+    errors = []
+    if not is_nonempty_text_list(expectations["may_report"]):
+        errors.append(f"invalid optional may_report in {relative}")
+    if expectations.get("output") != "findings":
+        errors.append(f"may_report requires findings output: {relative}")
+    if not is_nonempty_text_list(expectations.get("must_report")):
+        errors.append(f"may_report requires non-empty must_report: {relative}")
+    return errors
+
+
 def mixed_noise_errors(case: dict, relative: Path) -> list[str]:
     errors = []
     if case.get("kind") != "positive":
@@ -130,6 +148,7 @@ def main() -> int:
         missing = REQUIRED_EXPECTATIONS - expectations.keys()
         if missing:
             errors.append(f"missing expectations {sorted(missing)}: {relative}")
+        errors.extend(optional_expectation_errors(expectations, relative, kind))
         if expectations.get("output") not in VALID_RESULTS:
             errors.append(f"invalid expected output in {relative}")
         prefixes = expectations.get("prefixes")
