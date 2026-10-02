@@ -147,7 +147,6 @@ class EvaluationFixtureTests(unittest.TestCase):
             "must_report": ["A finding"],
             "prefixes": ["MUST(Functionality)"],
             "must_not_report": [],
-            "may_report": ["A valid but optional finding"],
         }
         for field, value in invalid_values.items():
             with self.subTest(field=field):
@@ -157,12 +156,6 @@ class EvaluationFixtureTests(unittest.TestCase):
                 )
                 self.assertEqual(len(errors), 1)
                 self.assertIn(field if field != "output" else "no_findings", errors[0])
-        self.assertEqual(
-            len(run_evaluations.negative_expectation_errors(
-                {**valid, "may_report": []}, case_path
-            )),
-            1,
-        )
 
     def test_mixed_noise_cases_need_evidence_and_both_candidate_types(self) -> None:
         case = {
@@ -207,11 +200,41 @@ class EvaluationFixtureTests(unittest.TestCase):
         self.assertEqual(len(errors), 4)
         self.assertTrue(any("redistribution_basis" in error for error in errors))
 
-    def test_optional_findings_must_be_nonempty_text(self) -> None:
-        self.assertTrue(run_evaluations.is_nonempty_text_list(["Valid test gap"]))
-        for invalid in ([], [""], [42], "Valid test gap"):
-            with self.subTest(invalid=invalid):
-                self.assertFalse(run_evaluations.is_nonempty_text_list(invalid))
+    def test_optional_findings_require_a_positive_findings_contract(self) -> None:
+        case_path = Path("tests/cases/example/case.json")
+        valid = {
+            "must_report": ["Required defect"],
+            "may_report": ["Optional test gap"],
+            "output": "findings",
+        }
+        self.assertEqual(
+            run_evaluations.optional_expectation_errors(valid, case_path, "positive"),
+            [],
+        )
+        for invalid in ([], [""], [42], "Optional test gap"):
+            with self.subTest(may_report=invalid):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, "may_report": invalid}, case_path, "positive"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn("invalid optional may_report", errors[0])
+        for overrides, expected in (
+            ({"output": "no_findings"}, "findings output"),
+            ({"must_report": []}, "non-empty must_report"),
+        ):
+            with self.subTest(overrides=overrides):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, **overrides}, case_path, "instruction-conflict"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn(expected, errors[0])
+        for may_report in ([], ["Optional test gap"]):
+            with self.subTest(negative_may_report=may_report):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, "may_report": may_report}, case_path, "negative"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn("negative case", errors[0])
 
 
 if __name__ == "__main__":
