@@ -1,0 +1,39 @@
+diff --git a/contact.go b/contact.go
+--- a/contact.go
++++ b/contact.go
+@@ -2,6 +2,6 @@
+ 
+ import "strings"
+ 
+ func contactKey(raw string) string {
+-	return strings.ToLower(strings.TrimSpace(raw))
++	return strings.ToLower(raw)
+ }
+diff --git a/status.go b/status.go
+--- a/status.go
++++ b/status.go
+@@ -1,5 +1,7 @@
+ package directory
+ 
++const ArchivedStatus = "archived"
++
+ func IsArchived(status string) bool {
+-	return status == "archived"
++	return status == ArchivedStatus
+ }
+diff --git a/headers.go b/headers.go
+--- a/headers.go
++++ b/headers.go
+@@ -1,5 +1,11 @@
+ package directory
+ 
++const requestIDHeader = "X-Request-ID"
++const contentTypeHeader = "Content-Type"
++
+ func ResponseHeaders(requestID string) map[string]string {
+-	return map[string]string{"X-Request-ID": requestID, "Content-Type": "application/json"}
++	return map[string]string{
++		requestIDHeader:   requestID,
++		contentTypeHeader: "application/json",
++	}
+ }

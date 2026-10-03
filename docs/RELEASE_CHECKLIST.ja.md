@@ -8,6 +8,8 @@
 ## 自動検査
 
 - [ ] clean checkoutで`make release-check`が成功する
+- [ ] PRの必須CIチェック`validate`が成功する。Java・Go・Pythonのfixture向け
+      `make language-check`を含み、ローカルへの実行環境の導入は必須としない
 - [ ] `make build`を再実行しても追跡対象に差分が出ない
 - [ ] 最終ソース変更後の全生成物を確認した
 - [ ] リリース対象ファイルに未コミットの変更がない
@@ -42,8 +44,14 @@
 
 ## リリース
 
-- [ ] `CHANGELOG.md`に日付入りの`0.1.0-beta.1`sectionと比較リンクがある
-- [ ] `docs/releases/v0.1.0-beta.1.md`が最終リリース内容と一致する
+- [ ] `VERSION`は`0.1.0-beta.2`で、両エージェント向けの生成Skillパッケージには
+      `v0.1.0-beta.2`が示されている
+- [ ] `CHANGELOG.md`に日付入りの`0.1.0-beta.2`sectionと比較リンクがある
+- [ ] `docs/releases/v0.1.0-beta.2.md`が最終リリース内容と一致する
+- [ ] 出力契約への追加や重要なレビュー挙動の変更を、関連する評価結果または
+      評価上の制約とともにリリースノートへ記載した
 - [ ] リリースコミットの最終確認が完了した
-- [ ] 上記の必須項目がすべて完了してから`v0.1.0-beta.1`tagを付ける
+- [ ] 上記の必須項目がすべて完了してから`v0.1.0-beta.2`tagを付ける
+- [ ] tag付け後に`make release-tag-check`を実行し、tag、英日CHANGELOG、
+      英日リリースノート、`VERSION`、両生成パッケージの整合を確認した
 - [ ] GitHub Releaseをプレリリースとして公開する

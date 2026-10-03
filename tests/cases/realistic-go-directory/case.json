@@ -1,0 +1,34 @@
+{
+  "id": "realistic-go-directory",
+  "kind": "positive",
+  "evaluation_type": "mixed-noise",
+  "source": "original-synthetic",
+  "ecosystem": "Go 1.22 standard library; no external dependencies",
+  "assumptions": [
+    "Directory.Find accepts user-entered email addresses with surrounding whitespace.",
+    "Directory.Add stores independently trimmed and lowercased keys."
+  ],
+  "limitations": [
+    "The included test covers only an exact search; go test passing does not prove the whitespace contract."
+  ],
+  "expected_evidence": [
+    "contact.go removes TrimSpace from contactKey.",
+    "The unchanged directory.go Add path stores a trimmed key, while Find calls contactKey on raw input.",
+    "The changed status and header helpers preserve their previous behavior."
+  ],
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "Find can no longer locate a stored contact when the user-entered address has surrounding whitespace: contactKey no longer trims, while unchanged Directory.Add stores a trimmed key."
+    ],
+    "must_not_report": [
+      "Treat the ArchivedStatus extraction as a behavior change; IsArchived still compares against the same archived string.",
+      "Treat the response-header constant extraction as a new header or media-type change; the map still contains the same keys and values."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}

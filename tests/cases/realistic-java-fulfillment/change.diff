@@ -1,0 +1,74 @@
+diff --git a/Fulfillment.java b/Fulfillment.java
+--- a/Fulfillment.java
++++ b/Fulfillment.java
+@@ -11,7 +11,7 @@
+     }
+ 
+     void fulfill(Order order) throws IOException {
+-        store.save(order);
+         notices.sent(order.id());
++        store.save(order);
+     }
+ }
+diff --git a/RetryPolicy.java b/RetryPolicy.java
+--- a/RetryPolicy.java
++++ b/RetryPolicy.java
+@@ -6,6 +6,6 @@
+     }
+ 
+     boolean shouldRetry(int completedAttempts) {
+-        return completedAttempts < maxAttempts;
++        return completedAttempts <= maxAttempts;
+     }
+ }
+diff --git a/ReceiptFormatter.java b/ReceiptFormatter.java
+--- a/ReceiptFormatter.java
++++ b/ReceiptFormatter.java
+@@ -2,9 +2,17 @@
+ 
+ final class ReceiptFormatter {
+     String render(Order order) {
++        return header(order) + ": $" + amount(order);
++    }
++
++    private String header(Order order) {
++        String identity = "Order " + order.id();
++        String recipient = " for " + order.customerEmail();
++        return identity + recipient;
++    }
++
++    private String amount(Order order) {
+         String amount = String.format(Locale.US, "%.2f", order.amountCents() / 100.0);
+-        String identity = "Order " + order.id();
+-        String recipient = " for " + order.customerEmail();
+-        return identity + recipient + ": $" + amount;
++        return amount;
+     }
+ }
+diff --git a/AuditFields.java b/AuditFields.java
+--- a/AuditFields.java
++++ b/AuditFields.java
+@@ -1,7 +1,10 @@
+ import java.util.Map;
+ 
+ final class AuditFields {
++    private static final String ORDER_ID = "order_id";
++    private static final String CUSTOMER = "customer";
++
+     Map<String, String> forOrder(Order order) {
+-        return Map.of("order_id", order.id(), "customer", order.customerEmail());
++        return Map.of(ORDER_ID, order.id(), CUSTOMER, order.customerEmail());
+     }
+ }
+diff --git a/NoticeTemplate.java b/NoticeTemplate.java
+--- a/NoticeTemplate.java
++++ b/NoticeTemplate.java
+@@ -1,5 +1,7 @@
+ final class NoticeTemplate {
++    private static final String PREFIX = "Order ";
++
+     String shipped(String orderId) {
+-        return "Order " + orderId + " shipped";
++        return PREFIX + orderId + " shipped";
+     }
+ }

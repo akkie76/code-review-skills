@@ -9,6 +9,21 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- A canonical version file and version marker in both generated Skill packages
+  for the upcoming `v0.1.0-beta.2` release.
+- English and Japanese versioning and output-compatibility policies, with
+  release checks for package versions and tagged release artifacts.
+- A sanitized Claude Code evaluation record that separates fixture matches
+  from Skill invocation, plus clearer optional-finding scoring guidance.
+
+### Changed
+
+- Clarified that repository review instructions complement the Skill rather
+  than replace it when selecting the Skill for a review request.
+- Documented explicit Claude Code invocation when automatic selection varies.
+
 ## [0.1.0-beta.1] - 2026-09-27
 
 ### Added

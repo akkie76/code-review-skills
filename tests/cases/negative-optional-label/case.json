@@ -1,6 +1,7 @@
 {
   "id": "negative-optional-label",
   "kind": "negative",
+  "false_positive_category": "contract-defined-behavior",
   "requests": [
     {"language": "en", "prompt": "Review the working tree changes."},
     {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}

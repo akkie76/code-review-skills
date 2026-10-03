@@ -1,0 +1,17 @@
+{
+  "id": "negative-go-format",
+  "kind": "negative",
+  "false_positive_category": "tool-enforced-style",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."}
+  ],
+  "expectations": {
+    "must_report": [],
+    "must_not_report": [
+      "Raise a whitespace/style finding for the gofmt-compliant tab: the committed CI configuration already enforces gofmt.",
+      "Claim that the formatting-only change alters Label's returned value."
+    ],
+    "prefixes": [],
+    "output": "no_findings"
+  }
+}

@@ -10,7 +10,9 @@
 - case ID：
 - 依頼言語：
 - 新規session：yes / no
-- 結果：pass / fail
+- Skill呼び出し：yes / no / 未確認
+- fixture期待値：pass / fail
+- Skillの挙動評価（呼び出された場合）：pass / fail / 制約あり
 - 期待するprefixを確認：
 - 必須の動作を確認：
 - 禁止する動作を確認：

@@ -1,0 +1,35 @@
+{
+  "id": "realistic-python-profile",
+  "kind": "positive",
+  "evaluation_type": "mixed-noise",
+  "source": "original-synthetic",
+  "ecosystem": "Python 3.11 standard library; no third-party dependencies",
+  "assumptions": [
+    "The first nonblank user-supplied tag is the primary tag.",
+    "Export access requires every listed role; an empty requirement set permits access."
+  ],
+  "limitations": [
+    "Compilation checks syntax only; the case has no automated behavior tests for tag order or authorization."
+  ],
+  "expected_evidence": [
+    "tags.py sorts cleaned tags, while unchanged profile.py selects the first tag as primary.",
+    "permissions.py switches all to any despite the every-role export contract; with no required roles, any also denies access where all permits it.",
+    "The label and audit refactors preserve their previous return values."
+  ],
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [
+      "Sorting clean_tags changes the primary tag selected by the unchanged profile.primary_tag caller whenever a later tag sorts before the first user-supplied tag.",
+      "Replacing all with any in can_export grants export access to users who have only one of multiple required roles; the same change also denies access when required_roles is empty. Either failure path establishes the same authorization regression."
+    ],
+    "must_not_report": [
+      "Claim the display_name extraction changes labels; it preserves stripping and the same parenthesized identifier.",
+      "Report the audit prefix constants or documentation addition as defects without a failing behavior."
+    ],
+    "prefixes": ["MUST(Functionality)"],
+    "output": "findings"
+  }
+}

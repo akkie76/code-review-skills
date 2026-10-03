@@ -1,0 +1,18 @@
+{
+  "id": "negative-java-contract",
+  "kind": "negative",
+  "false_positive_category": "fully-updated-shared-contract",
+  "requests": [
+    {"language": "en", "prompt": "Review the working tree changes."},
+    {"language": "ja", "prompt": "作業ツリーの変更をコードレビューしてください。"}
+  ],
+  "expectations": {
+    "must_report": [],
+    "must_not_report": [
+      "Claim that the return-type change breaks Checkout or Receipt: both statically discoverable callers extract netCents from the new Quote record.",
+      "Speculate about an unknown external consumer of the package-private API when the fixture includes every source file."
+    ],
+    "prefixes": [],
+    "output": "no_findings"
+  }
+}
