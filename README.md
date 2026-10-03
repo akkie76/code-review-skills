@@ -6,6 +6,10 @@ Code Review Skills is an evidence-driven code-review workflow for AI coding
 agents. It helps Codex and Claude Code find actionable defects while avoiding
 style-only comments and unsupported speculation.
 
+This Skill is based on ideas from [*コードレビューの教科書*](https://gihyo.jp/book/2026/978-4-297-15768-5)
+and independently adapts them for AI coding agents. It does not reproduce or
+replace the book.
+
 > **Beta:** The review methodology and packaging are under evaluation. Expect
 > changes before the first stable release.
 
