@@ -51,6 +51,10 @@ Optional quality step:
       identify `v0.1.0-beta.2`.
 - [ ] `CHANGELOG.md` contains a dated `0.1.0-beta.2` section and comparison links.
 - [ ] `docs/releases/v0.1.0-beta.2.md` matches the final release contents.
+- [ ] Any output-contract addition or material review-behavior change is
+      explained in the release notes with relevant evaluation evidence or limits.
 - [ ] The release commit has received final review.
 - [ ] Tag `v0.1.0-beta.2` only after every required item above is complete.
+- [ ] Run `make release-tag-check` after tagging to verify the tag, both
+      changelogs, both release notes, `VERSION`, and both generated packages.
 - [ ] Mark the GitHub Release as a pre-release.

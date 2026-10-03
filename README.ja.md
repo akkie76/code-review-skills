@@ -63,6 +63,8 @@ cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 
 インストールしたpackageのバージョンは`SKILL.md`冒頭付近の`skill-version`コメントで
 確認できます。このリポジトリの現在のバージョンは`VERSION`に記録しています。
+[バージョンと互換性の方針](docs/VERSIONING.ja.md)に、文書化した出力契約と
+リリース時のバージョン規則を記載しています。
 
 Skillはエージェントへ指示を与えるものです。ほかの実行可能な開発設定と同様に、
 内容を確認してからインストールしてください。
