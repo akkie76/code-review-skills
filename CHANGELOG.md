@@ -13,13 +13,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 - A canonical version file and version marker in both generated Skill packages
   for the upcoming `v0.1.0-beta.2` release.
-<<<<<<< HEAD
 - English and Japanese versioning and output-compatibility policies, with
   release checks for package versions and tagged release artifacts.
-=======
 - A sanitized Claude Code evaluation record that separates fixture matches
   from Skill invocation, plus clearer optional-finding scoring guidance.
->>>>>>> origin/develop
 
 ## [0.1.0-beta.1] - 2026-09-27
 
