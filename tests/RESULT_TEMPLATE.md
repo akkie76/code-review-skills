@@ -10,7 +10,9 @@
 - Case ID:
 - Request language:
 - Fresh session: yes / no
-- Result: pass / fail
+- Skill invoked: yes / no / not observed
+- Fixture expectations: pass / fail
+- Skill behavior assessment (if invoked): pass / fail / limited
 - Expected prefixes observed:
 - Required behavior observed:
 - Prohibited behavior observed:
