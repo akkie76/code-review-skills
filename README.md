@@ -59,7 +59,8 @@ cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 For one repository, copy the package to
 `.claude/skills/evidence-code-review/` inside that repository instead. Invoke
 it with `/evidence-code-review` or ask Claude Code to use the
-`evidence-code-review` skill.
+`evidence-code-review` skill. Automatic selection can vary with context; when
+you need the Skill to run, invoke `/evidence-code-review` explicitly.
 
 The installed package records its version in a `skill-version` comment near
 the top of `SKILL.md`. This repository's current version is in `VERSION`.

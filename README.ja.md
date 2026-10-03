@@ -59,7 +59,8 @@ cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 特定のリポジトリだけで利用する場合は、そのリポジトリ内の
 `.claude/skills/evidence-code-review/`へpackage全体をコピーします。
 `/evidence-code-review`で明示的に呼び出すか、Claude CodeへこのSkillを使って
-変更をレビューするよう依頼してください。
+変更をレビューするよう依頼してください。自動選択は状況によって変わるため、
+Skillを確実に使いたい場合は`/evidence-code-review`で明示的に呼び出してください。
 
 インストールしたpackageのバージョンは`SKILL.md`冒頭付近の`skill-version`コメントで
 確認できます。このリポジトリの現在のバージョンは`VERSION`に記録しています。

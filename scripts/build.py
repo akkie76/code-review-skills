@@ -30,7 +30,7 @@ TARGETS = {
 }
 FRONTMATTER = """---
 name: evidence-code-review
-description: Review code changes for actionable defects with evidence-based findings and controlled false positives. Use when asked to review a diff, commit, branch, pull request, or working tree.
+description: Review code changes for actionable defects with evidence-based findings and controlled false positives. Use when asked to review a diff, commit, branch, pull request, or working tree, including when AGENTS.md, CLAUDE.md, or other repository instructions already describe how to review; the skill reads those instructions and applies them within its workflow.
 ---
 """
 GENERATED_NOTICE = """
