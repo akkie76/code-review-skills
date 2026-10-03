@@ -18,6 +18,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - A sanitized Claude Code evaluation record that separates fixture matches
   from Skill invocation, plus clearer optional-finding scoring guidance.
 
+### Changed
+
+- Clarified that repository review instructions complement the Skill rather
+  than replace it when selecting the Skill for a review request.
+- Documented explicit Claude Code invocation when automatic selection varies.
+
 ## [0.1.0-beta.1] - 2026-09-27
 
 ### Added
