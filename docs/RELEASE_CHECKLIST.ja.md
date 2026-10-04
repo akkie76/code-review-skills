@@ -18,6 +18,11 @@
 
 - [ ] Codexの新規sessionで全fixtureが合格する
 - [ ] Claude Codeの新規sessionで全fixtureが合格する
+- [ ] Claude CodeではCLIのバージョン、モデル、Skillのrevision、依頼言語を記録する。
+      各新規sessionで、実行記録上のSkill呼び出しとfixtureの期待との一致を別々に確認し、
+      Skillなしで一致した結果をSkillの合格として数えない
+- [ ] Claude Codeで少なくとも1件の負例を英語・日本語の両方で評価し、予期しない指摘や
+      根拠のない補足の事実を分類する。#35の挙動が再発するかも確認する
 - [ ] 英語と日本語の依頼で同等のfinding判断になる
 - [ ] 予期しないfindingを有効、曖昧、誤検知のいずれかに分類し、fixtureまたは手法へ反映した
 
@@ -46,7 +51,7 @@
 
 - [ ] `VERSION`は`0.1.0-beta.2`で、両エージェント向けの生成Skillパッケージには
       `v0.1.0-beta.2`が示されている
-- [ ] `CHANGELOG.md`に日付入りの`0.1.0-beta.2`sectionと比較リンクがある
+- [ ] 英日CHANGELOGに日付入りの`0.1.0-beta.2`sectionとリリースリンクがある
 - [ ] `docs/releases/v0.1.0-beta.2.md`が最終リリース内容と一致する
 - [ ] 出力契約への追加や重要なレビュー挙動の変更を、関連する評価結果または
       評価上の制約とともにリリースノートへ記載した

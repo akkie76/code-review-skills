@@ -19,6 +19,13 @@ release while any required item remains incomplete.
 
 - [ ] Every fixture passes a fresh-session evaluation in Codex.
 - [ ] Every fixture passes a fresh-session evaluation in Claude Code.
+- [ ] For Claude Code, record the CLI version, model, Skill revision, and
+      request language. In each fresh session, confirm Skill invocation from
+      the execution trace separately from whether the output matches the
+      fixture expectations; do not count an unassisted match as a Skill pass.
+- [ ] For Claude Code, evaluate at least one negative fixture in both English
+      and Japanese and classify every unexpected finding or unsupported
+      supporting claim, including whether the behavior in #35 recurs.
 - [ ] English and Japanese requests produce equivalent finding decisions.
 - [ ] Any unexpected finding has been classified as valid, ambiguous, or a
       false positive and reflected in the fixtures or methodology.
@@ -49,7 +56,7 @@ Optional quality step:
 
 - [ ] `VERSION` contains `0.1.0-beta.2`, and both generated Skill packages
       identify `v0.1.0-beta.2`.
-- [ ] `CHANGELOG.md` contains a dated `0.1.0-beta.2` section and comparison links.
+- [ ] Both changelogs contain a dated `0.1.0-beta.2` section and release link.
 - [ ] `docs/releases/v0.1.0-beta.2.md` matches the final release contents.
 - [ ] Any output-contract addition or material review-behavior change is
       explained in the release notes with relevant evaluation evidence or limits.
