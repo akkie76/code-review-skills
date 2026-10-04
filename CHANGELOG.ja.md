@@ -7,22 +7,27 @@
 形式は[Keep a Changelog](https://keepachangelog.com/ja/1.1.0/)を参考にし、
 [Semantic Versioning](https://semver.org/lang/ja/spec/v2.0.0.html)を採用します。
 
-## [未リリース]
+## [0.1.0-beta.2] - 2026-10-04
 
 ### 追加
 
-- 次期`v0.1.0-beta.2`リリースに向けたバージョンの正本ファイルと、両エージェント向け
-  生成Skillパッケージのバージョン表記
+- Go・Java・Pythonの大きな混在差分を含む、負例および現実的な行動評価fixtureを
+  10件追加。評価suiteは計28件
+- 各fixtureの差分適用後にJava・Go・Pythonを確認するCI検査
+- バージョンの正本ファイルと、両エージェント向け生成Skillパッケージのバージョン表記
 - 英日双方のバージョン・出力互換性方針と、パッケージのバージョンおよび
   タグ付きリリース資料の整合性を確認する検査
-- fixtureとの一致とSkillの呼び出しを分けて示すClaude Codeの評価記録、および
-  任意の指摘を採点する方法の明確化
+- fixtureとの一致とSkillの呼び出しを区別し、制約も記録したCodex・Claude Codeの
+  評価記録
+- Skillでの未検証の提案も、具体的な根拠を添えて報告できる精度改善提案用Issue form
 
 ### 変更
 
 - リポジトリ独自のレビュー指示がある場合も、Skillの選択時には代替ではなく補完する
   ことを明確化
 - Claude Codeで自動選択が変動する場合の明示的な呼び出し方法を記載
+- 任意の指摘の採点方法を明確化しつつ、すべての事実に必要な根拠は維持
+- 両READMEから『コードレビューの教科書』の出版社公式ページへリンク
 
 ## [0.1.0-beta.1] - 2026-09-27
 
@@ -56,5 +61,5 @@
 - 根拠を添えたベータ版feedbackを受け付ける構造化Issue formと、Pull Requestの
   事前合意制を維持するサポート方針
 
-[未リリース]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.2]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.1

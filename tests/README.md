@@ -92,6 +92,8 @@ See the [2026-10-01 evaluation summary](results/2026-10-01.md) for the first
 fresh-session Codex sample. The [2026-10-02 summary](results/2026-10-02.md)
 records the Claude Code sample, including runs in which the Skill was not
 invoked and issues found outside the fixture expectations.
+The [2026-10-04 Codex release-candidate sample](results/2026-10-04.md)
+records selected beta.2 runs and explicitly does not claim all-fixture coverage.
 
 ## Multi-agent evaluation boundary
 
