@@ -3,12 +3,19 @@
 
 from __future__ import annotations
 
+import argparse
 import re
 import subprocess
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SEMVER_PATTERN = re.compile(
+    r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+    r"(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?"
+    r"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+)
 DISALLOWED_SUFFIXES = {".pdf", ".doc", ".docx", ".pages"}
 SECRET_PATTERNS = {
     "private key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
@@ -83,7 +90,69 @@ def historical_blobs() -> list[tuple[str, str, str]]:
     return blobs
 
 
+def version_consistency_errors(check_tag: bool = False) -> list[str]:
+    """Check the source version, packages, and (after tagging) release artifacts."""
+    errors: list[str] = []
+    version_file = ROOT / "VERSION"
+    if not version_file.is_file():
+        return ["missing VERSION"]
+    version = version_file.read_text(encoding="utf-8").strip()
+    if not SEMVER_PATTERN.fullmatch(version):
+        return [f"VERSION is not a valid SemVer version: {version!r}"]
+
+    tag = f"v{version}"
+    marker = f"<!-- skill-version: {tag} -->"
+    for agent in ("codex", "claude-code"):
+        package = ROOT / "dist" / agent / "evidence-code-review" / "SKILL.md"
+        if (
+            not package.is_file()
+            or package.read_text(encoding="utf-8").count(marker) != 1
+        ):
+            errors.append(f"{agent} package must contain exactly one {marker} marker")
+
+    if not check_tag:
+        return errors
+
+    if tag not in git("tag", "--points-at", "HEAD").splitlines():
+        errors.append(f"Git tag {tag} must point to HEAD")
+    for language, changelog, notes in (
+        (
+            "English", ROOT / "CHANGELOG.md",
+            ROOT / "docs/releases" / f"{tag}.md",
+        ),
+        (
+            "Japanese", ROOT / "CHANGELOG.ja.md",
+            ROOT / "docs/releases" / f"{tag}.ja.md",
+        ),
+    ):
+        if not changelog.is_file():
+            errors.append(f"missing {language} changelog: {changelog.relative_to(ROOT)}")
+        else:
+            content = changelog.read_text(encoding="utf-8")
+            dated_section = rf"(?m)^## \[{re.escape(version)}\] - \d{{4}}-\d{{2}}-\d{{2}}$"
+            release_link = (
+                rf"(?m)^\[{re.escape(version)}\]: "
+                rf"https://github\.com/akkie76/code-review-skills/releases/tag/{re.escape(tag)}$"
+            )
+            if not re.search(dated_section, content):
+                errors.append(f"{language} changelog needs a dated {version} section")
+            if not re.search(release_link, content):
+                errors.append(f"{language} changelog needs a {tag} release link")
+        if not notes.is_file():
+            errors.append(f"missing {language} release notes: {notes.relative_to(ROOT)}")
+        elif not notes.read_text(encoding="utf-8").startswith(f"# Code Review Skills {tag}\n"):
+            errors.append(f"{language} release notes must identify {tag}")
+    return errors
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--tag",
+        action="store_true",
+        help="also require the current version's tag, changelogs, and release notes",
+    )
+    args = parser.parse_args()
     errors: list[str] = []
     tracked = [Path(path) for path in git("ls-files").splitlines()]
     history_names = [
@@ -121,6 +190,7 @@ def main() -> int:
     required = {
         "README.md",
         "README.ja.md",
+        "VERSION",
         "LICENSE",
         "SECURITY.md",
         "SECURITY.ja.md",
@@ -138,8 +208,12 @@ def main() -> int:
         "docs/RELEASE_CHECKLIST.ja.md",
         "docs/REVIEW_COMMENTS.md",
         "docs/REVIEW_COMMENTS.ja.md",
+        "docs/VERSIONING.md",
+        "docs/VERSIONING.ja.md",
         "docs/releases/v0.1.0-beta.1.md",
         "docs/releases/v0.1.0-beta.1.ja.md",
+        "docs/releases/v0.1.0-beta.2.md",
+        "docs/releases/v0.1.0-beta.2.ja.md",
         "tests/README.md",
         "tests/README.ja.md",
         "tests/RESULT_TEMPLATE.md",
@@ -147,6 +221,7 @@ def main() -> int:
     }
     missing = required - {path.as_posix() for path in tracked}
     errors.extend(f"missing release file: {path}" for path in sorted(missing))
+    errors.extend(version_consistency_errors(check_tag=args.tag))
 
     link_pattern = re.compile(r"\[[^]]*\]\(([^)]+)\)")
     for path in tracked:

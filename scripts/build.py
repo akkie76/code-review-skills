@@ -30,7 +30,7 @@ TARGETS = {
 }
 FRONTMATTER = """---
 name: evidence-code-review
-description: Review code changes for actionable defects with evidence-based findings and controlled false positives. Use when asked to review a diff, commit, branch, pull request, or working tree.
+description: Review code changes for actionable defects with evidence-based findings and controlled false positives. Use when asked to review a diff, commit, branch, pull request, or working tree, including when AGENTS.md, CLAUDE.md, or other repository instructions already describe how to review; the skill reads those instructions and applies them within its workflow.
 ---
 """
 GENERATED_NOTICE = """
@@ -66,6 +66,7 @@ def normalized_source(path: Path) -> str:
 
 
 def render() -> str:
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     sections = "\n\n---\n\n".join(normalized_source(path) for path in SOURCE_FILES)
     digest = hashlib.sha256(
         b"\0".join(
@@ -75,6 +76,7 @@ def render() -> str:
     return (
         FRONTMATTER
         + GENERATED_NOTICE
+        + f"\n<!-- skill-version: v{version} -->\n"
         + f"\n<!-- source-sha256: {digest} -->\n\n"
         + sections
         + "\n"

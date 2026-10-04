@@ -1,0 +1,262 @@
+diff --git a/README.md b/README.md
+index 9a8a7c9..318a4b2 100644
+--- a/README.md
++++ b/README.md
+@@ -7,3 +7,22 @@ recorded in the audit log. If the sender fails, that notice stays pending.
+ The store is in memory so the fixture can be exercised without a database.
+ Pending notices are ordered by ID; tenant boundaries are enforced by the
+ store. A batch may contain more notices than one page.
++
++## Batch processing
++
++The dispatcher now reads pages so a large tenant does not need one delivery
++loop over the entire pending collection. Page size is deliberately small in
++this example so several pages are easy to exercise. The store returns only
++currently pending notices for the requested tenant, ordered by notice ID.
++After a successful send, that notice is removed from later pending queries.
++
++Batch audit events mark the start and successful completion of a dispatch.
++Per-notice audit entries still follow each successful delivery. A failed
++send is not marked sent.
++
++## Display output
++
++The report module formats a batch count and the sent IDs. Its output is
++intended for operators, not as the source of truth for delivery state.
++The sender now creates a delivery envelope from a notice before forwarding
++the same recipient, subject, and body to the transport.
+diff --git a/audit.py b/audit.py
+index 5d14551..149adbe 100644
+--- a/audit.py
++++ b/audit.py
+@@ -2,9 +2,22 @@ class AuditLog:
+     def __init__(self) -> None:
+         self.events: list[dict[str, str]] = []
+ 
++    def started(self, tenant_id: str) -> None:
++        self.events.append({
++            "event": "batch.started",
++            "tenant_id": tenant_id,
++        })
++
+     def sent(self, tenant_id: str, notice_id: str) -> None:
+         self.events.append({
+             "event": "notice.sent",
+             "tenant_id": tenant_id,
+             "notice_id": notice_id,
+         })
++
++    def completed(self, tenant_id: str, count: int) -> None:
++        self.events.append({
++            "event": "batch.completed",
++            "tenant_id": tenant_id,
++            "count": str(count),
++        })
+diff --git a/dispatcher.py b/dispatcher.py
+index f12cad4..0d66e15 100644
+--- a/dispatcher.py
++++ b/dispatcher.py
+@@ -3,13 +3,24 @@ from sender import Sender
+ from store import NoticeStore
+ 
+ 
++PAGE_SIZE = 2
++
++
+ def dispatch_pending(
+     store: NoticeStore, sender: Sender, audit: AuditLog, tenant_id: str
+ ) -> list[str]:
+     sent_ids: list[str] = []
+-    for notice in store.pending(tenant_id):
+-        sender.send(notice)
+-        store.mark_sent(notice.id)
+-        audit.sent(tenant_id, notice.id)
+-        sent_ids.append(notice.id)
++    offset = 0
++    audit.started(tenant_id)
++    while True:
++        page = store.pending_page(tenant_id, offset, PAGE_SIZE)
++        if not page:
++            break
++        for notice in page:
++            sender.send(notice)
++            store.mark_sent(notice.id)
++            audit.sent(tenant_id, notice.id)
++            sent_ids.append(notice.id)
++        offset += len(page)
++    audit.completed(tenant_id, len(sent_ids))
+     return sent_ids
+diff --git a/model.py b/model.py
+index 17f7b5f..326d0ce 100644
+--- a/model.py
++++ b/model.py
+@@ -9,3 +9,18 @@ class Notice:
+     subject: str
+     body: str
+     sent: bool = False
++
++
++@dataclass(frozen=True)
++class DeliveryEnvelope:
++    recipient: str
++    subject: str
++    body: str
++
++
++def envelope_for(notice: Notice) -> DeliveryEnvelope:
++    return DeliveryEnvelope(
++        recipient=notice.recipient,
++        subject=notice.subject,
++        body=notice.body,
++    )
+diff --git a/report.py b/report.py
+index 9d5ef35..38d928a 100644
+--- a/report.py
++++ b/report.py
+@@ -1,7 +1,24 @@
++from dataclasses import dataclass
++
++
++@dataclass(frozen=True)
++class BatchSummary:
++    tenant_id: str
++    sent_ids: tuple[str, ...]
++
++    @property
++    def count(self) -> int:
++        return len(self.sent_ids)
++
++
++def summarize(tenant_id: str, sent_ids: list[str]) -> BatchSummary:
++    return BatchSummary(tenant_id=tenant_id, sent_ids=tuple(sent_ids))
++
++
+ def summary_line(tenant_id: str, sent_ids: list[str]) -> str:
+-    count = len(sent_ids)
+-    return tenant_id + ": sent " + str(count) + " notice(s)"
++    batch = summarize(tenant_id, sent_ids)
++    return batch.tenant_id + ": sent " + str(batch.count) + " notice(s)"
+ 
+ 
+ def id_line(sent_ids: list[str]) -> str:
+     return ", ".join(sent_ids) if sent_ids else "none"
+diff --git a/sender.py b/sender.py
+index 02c78e3..0e6c8de 100644
+--- a/sender.py
++++ b/sender.py
+@@ -1,4 +1,4 @@
+-from model import Notice
++from model import Notice, envelope_for
+ 
+ 
+ class DeliveryError(Exception):
+@@ -10,4 +10,5 @@ class Sender:
+         self.deliver = deliver
+ 
+     def send(self, notice: Notice) -> None:
+-        self.deliver(notice.recipient, notice.subject, notice.body)
++        envelope = envelope_for(notice)
++        self.deliver(envelope.recipient, envelope.subject, envelope.body)
+diff --git a/store.py b/store.py
+index 95c22ff..2648631 100644
+--- a/store.py
++++ b/store.py
+@@ -14,5 +14,21 @@ class NoticeStore:
+             key=lambda notice: notice.id,
+         )
+ 
++    def pending_page(
++        self, tenant_id: str, offset: int, limit: int
++    ) -> list[Notice]:
++        if offset < 0 or limit < 1:
++            raise ValueError("invalid page bounds")
++        return self.pending(tenant_id)[offset:offset + limit]
++
++    def pending_count(self, tenant_id: str) -> int:
++        return len(self.pending(tenant_id))
++
++    def sent_count(self, tenant_id: str) -> int:
++        return sum(
++            1 for notice in self.notices.values()
++            if notice.tenant_id == tenant_id and notice.sent
++        )
++
+     def mark_sent(self, notice_id: str) -> None:
+         self.notices[notice_id].sent = True
+diff --git a/template.py b/template.py
+index 7e5ec3e..0a93a49 100644
+--- a/template.py
++++ b/template.py
+@@ -2,4 +2,8 @@ from model import Notice
+ 
+ 
+ def preview(notice: Notice) -> str:
+-    return notice.subject + "\n" + notice.body
++    return "\n".join(preview_lines(notice))
++
++
++def preview_lines(notice: Notice) -> list[str]:
++    return [notice.subject, notice.body]
+diff --git a/test_dispatcher.py b/test_dispatcher.py
+new file mode 100644
+index 0000000..cc27ac4
+--- /dev/null
++++ b/test_dispatcher.py
+@@ -0,0 +1,57 @@
++import unittest
++
++from audit import AuditLog
++from dispatcher import dispatch_pending
++from model import Notice
++from report import id_line, summary_line
++from sender import DeliveryError, Sender
++from store import NoticeStore
++from template import preview
++
++
++def notice(identifier: str, tenant_id: str = "north") -> Notice:
++    return Notice(
++        id=identifier,
++        tenant_id=tenant_id,
++        recipient="person@example.invalid",
++        subject="Notice " + identifier,
++        body="Ready",
++    )
++
++
++class DispatchTests(unittest.TestCase):
++    def test_one_page_and_other_tenant(self) -> None:
++        store = NoticeStore([notice("n1"), notice("n2"), notice("s1", "south")])
++        deliveries: list[tuple[str, str, str]] = []
++        sender = Sender(lambda recipient, subject, body: deliveries.append(
++            (recipient, subject, body)
++        ))
++        audit = AuditLog()
++
++        sent = dispatch_pending(store, sender, audit, "north")
++
++        self.assertEqual(sent, ["n1", "n2"])
++        self.assertEqual(len(deliveries), 2)
++        self.assertEqual([item.id for item in store.pending("south")], ["s1"])
++        self.assertEqual(store.pending_count("north"), 0)
++        self.assertEqual(store.sent_count("north"), 2)
++        self.assertEqual(audit.events[-1]["count"], "2")
++
++    def test_failed_delivery_stays_pending(self) -> None:
++        store = NoticeStore([notice("n1")])
++        sender = Sender(lambda *_: (_ for _ in ()).throw(DeliveryError()))
++
++        with self.assertRaises(DeliveryError):
++            dispatch_pending(store, sender, AuditLog(), "north")
++
++        self.assertEqual([item.id for item in store.pending("north")], ["n1"])
++
++    def test_display_refactors_preserve_output(self) -> None:
++        item = notice("n1")
++        self.assertEqual(preview(item), "Notice n1\nReady")
++        self.assertEqual(summary_line("north", ["n1"]), "north: sent 1 notice(s)")
++        self.assertEqual(id_line([]), "none")
++
++
++if __name__ == "__main__":
++    unittest.main()

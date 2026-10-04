@@ -1,0 +1,36 @@
+diff --git a/ReportService.java b/ReportService.java
+--- a/ReportService.java
++++ b/ReportService.java
+@@ -2,20 +2,31 @@
+ 
+ final class ReportService {
+     String summarize(List<Integer> amounts) {
+         int count = amounts.size();
++        Totals totals = calculate(amounts, count);
++        return format(count, totals);
++    }
++
++    private record Totals(int total, int min, int max) {}
++
++    private Totals calculate(List<Integer> amounts, int count) {
+         int total = 0;
+         int min = 0;
+         int max = 0;
+         for (int i = 0; i < count; i++) {
+             int amount = amounts.get(i);
+             total += amount;
+             if (i == 0 || amount < min) {
+                 min = amount;
+             }
+             if (i == 0 || amount > max) {
+                 max = amount;
+             }
+         }
++        return new Totals(total, min, max);
++    }
++
++    private String format(int count, Totals totals) {
+         String status = count == 0 ? "empty" : "ready";
+-        return status + ":" + count + ":" + total + ":" + min + ":" + max;
++        return status + ":" + count + ":" + totals.total() + ":" + totals.min() + ":" + totals.max();
+     }

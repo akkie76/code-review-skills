@@ -5,13 +5,108 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 from scripts import build, release_check
+from tests import check_language_fixtures, run_evaluations
 
 
 class ReleaseCheckTests(unittest.TestCase):
+    def test_version_and_generated_package_markers_must_agree(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "VERSION").write_text("0.1.0-beta.2\n", encoding="utf-8")
+            for agent in ("codex", "claude-code"):
+                package = root / "dist" / agent / "evidence-code-review/SKILL.md"
+                package.parent.mkdir(parents=True)
+                package.write_text("<!-- skill-version: v0.1.0-beta.2 -->\n", encoding="utf-8")
+            with patch.object(release_check, "ROOT", root):
+                self.assertEqual(release_check.version_consistency_errors(), [])
+                (root / "VERSION").write_text("0.1.0-beta.02\n", encoding="utf-8")
+                self.assertIn(
+                    "valid SemVer", release_check.version_consistency_errors()[0]
+                )
+                (root / "VERSION").write_text("0.1.0-beta.2\n", encoding="utf-8")
+                package.write_text("<!-- skill-version: v0.1.0-beta.1 -->\n", encoding="utf-8")
+                errors = release_check.version_consistency_errors()
+                self.assertEqual(len(errors), 1)
+                self.assertIn("claude-code", errors[0])
+
+    def test_tagged_release_checks_both_languages_and_head_tag(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            version = "0.1.0-beta.2"
+            tag = f"v{version}"
+            (root / "VERSION").write_text(version + "\n", encoding="utf-8")
+            for agent in ("codex", "claude-code"):
+                package = root / "dist" / agent / "evidence-code-review/SKILL.md"
+                package.parent.mkdir(parents=True)
+                package.write_text(f"<!-- skill-version: {tag} -->\n", encoding="utf-8")
+            releases = root / "docs/releases"
+            releases.mkdir(parents=True)
+            for suffix in ("", ".ja"):
+                (root / f"CHANGELOG{suffix}.md").write_text(
+                    f"## [{version}] - 2026-10-02\n"
+                    f"[{version}]: https://github.com/akkie76/code-review-skills/releases/tag/{tag}\n",
+                    encoding="utf-8",
+                )
+                (releases / f"{tag}{suffix}.md").write_text(
+                    f"# Code Review Skills {tag}\n", encoding="utf-8"
+                )
+            with patch.object(release_check, "ROOT", root), patch.object(
+                release_check, "git", return_value=tag + "\n"
+            ) as git_command:
+                self.assertEqual(release_check.version_consistency_errors(True), [])
+                git_command.assert_called_with("tag", "--points-at", "HEAD")
+                git_command.return_value = ""
+                self.assertIn(
+                    f"Git tag {tag} must point to HEAD",
+                    release_check.version_consistency_errors(True),
+                )
+                git_command.return_value = tag + "\n"
+                for suffix, language in (
+                    ("", "English"),
+                    (".ja", "Japanese"),
+                ):
+                    changelog = root / f"CHANGELOG{suffix}.md"
+                    correct = changelog.read_text(encoding="utf-8")
+                    changelog.write_text(
+                        correct.replace(
+                            f"/releases/tag/{tag}",
+                            "/releases/tag/v0.1.0-beta.1",
+                        ),
+                        encoding="utf-8",
+                    )
+                    self.assertTrue(
+                        any(
+                            f"{language} changelog needs a {tag} release link"
+                            in error
+                            for error in release_check.version_consistency_errors(True)
+                        )
+                    )
+                    changelog.write_text(correct, encoding="utf-8")
+                (root / "CHANGELOG.ja.md").write_text("", encoding="utf-8")
+                errors = release_check.version_consistency_errors(True)
+                self.assertTrue(
+                    any("Japanese changelog needs a dated" in error for error in errors)
+                )
+                self.assertTrue(
+                    any(
+                        "Japanese changelog needs a v0.1.0-beta.2 release link" in error
+                        for error in errors
+                    )
+                )
+                (releases / f"{tag}.ja.md").unlink()
+                self.assertTrue(
+                    any(
+                        "missing Japanese release notes" in error
+                        for error in release_check.version_consistency_errors(True)
+                    )
+                )
+
     def test_detects_supported_github_token_formats(self) -> None:
         pattern = release_check.SECRET_PATTERNS["GitHub token"]
         legacy_token = "gh" + "p_" + "a" * 36
@@ -63,6 +158,234 @@ class BuildTests(unittest.TestCase):
                 build.write_outputs("generated\n")
                 self.assertFalse(obsolete.exists())
                 self.assertEqual(build.check_outputs("generated\n"), [])
+
+
+class LanguageFixtureTests(unittest.TestCase):
+    def test_detects_languages_added_by_patch(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            for case_name in ("go-case", "java-case", "python-case"):
+                repository = cases / case_name / "repository"
+                repository.mkdir(parents=True)
+                (repository / "README.md").write_text("baseline\n", encoding="utf-8")
+                (cases / case_name / "change.diff").write_text(
+                    "sample patch\n", encoding="utf-8"
+                )
+
+            def apply_fixture_patch(
+                command: list[str], cwd: Path, env: dict[str, str] | None = None
+            ) -> None:
+                if command[:2] != ["git", "apply"]:
+                    return
+                if cwd.name == "go-case":
+                    (cwd / "go.mod").write_text("module example.org/check\n")
+                    (cwd / "check.go").write_text("package check\n")
+                elif cwd.name == "java-case":
+                    (cwd / "Check.java").write_text("class Check {}\n")
+                elif cwd.name == "python-case":
+                    (cwd / "check.py").write_text("value = 1\n")
+
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run", side_effect=apply_fixture_patch
+            ) as run_command, patch.object(
+                check_language_fixtures.subprocess, "run"
+            ) as gofmt_command, redirect_stdout(StringIO()):
+                gofmt_command.return_value.returncode = 0
+                gofmt_command.return_value.stdout = ""
+                self.assertEqual(check_language_fixtures.check_fixtures(), 0)
+
+            commands = [invocation.args[0] for invocation in run_command.call_args_list]
+            self.assertEqual([command[:2] for command in commands].count(["git", "apply"]), 3)
+            self.assertIn(["go", "test", "./..."], commands)
+            self.assertTrue(any(command[:3] == ["javac", "--release", "17"] for command in commands))
+            self.assertTrue(any(command[1:] == ["-m", "compileall", "-q", "."] for command in commands))
+            gofmt_command.assert_called_once()
+
+    def test_rejects_added_go_source_without_module(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            repository = cases / "go-case/repository"
+            repository.mkdir(parents=True)
+            (repository / "README.md").write_text("baseline\n", encoding="utf-8")
+            (cases / "go-case/change.diff").write_text("sample patch\n", encoding="utf-8")
+
+            def add_go_source(
+                command: list[str], cwd: Path, env: dict[str, str] | None = None
+            ) -> None:
+                (cwd / "check.go").write_text("package check\n", encoding="utf-8")
+
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run", side_effect=add_go_source
+            ):
+                with self.assertRaisesRegex(RuntimeError, "Go sources require go.mod"):
+                    check_language_fixtures.check_fixtures()
+
+    def test_checks_applied_go_java_and_python_fixtures(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            go_repository = cases / "go-case/repository"
+            go_repository.mkdir(parents=True)
+            (go_repository / "go.mod").write_text("module example.org/check\n")
+            (go_repository / "check.go").write_text("package check\n")
+            (cases / "go-case/change.diff").write_text("sample patch\n")
+            java_repository = cases / "java-case/repository"
+            java_repository.mkdir(parents=True)
+            (java_repository / "Check.java").write_text("class Check {}\n")
+            (cases / "java-case/change.diff").write_text("sample patch\n")
+            python_repository = cases / "python-case/repository"
+            python_repository.mkdir(parents=True)
+            (python_repository / "check.py").write_text("value = 1\n")
+            (python_repository / "test_check.py").write_text("import unittest\n")
+            (cases / "python-case/change.diff").write_text("sample patch\n")
+            python_without_tests = cases / "python-no-tests/repository"
+            python_without_tests.mkdir(parents=True)
+            (python_without_tests / "check.py").write_text("value = 1\n")
+            (cases / "python-no-tests/change.diff").write_text("sample patch\n")
+
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run"
+            ) as run_command, patch.object(
+                check_language_fixtures.subprocess, "run"
+            ) as gofmt_command, redirect_stdout(StringIO()):
+                gofmt_command.return_value.returncode = 0
+                gofmt_command.return_value.stdout = ""
+                self.assertEqual(check_language_fixtures.check_fixtures(), 0)
+
+            commands = [invocation.args[0] for invocation in run_command.call_args_list]
+            self.assertEqual([command[0] for command in commands].count("git"), 4)
+            self.assertIn(["go", "test", "./..."], commands)
+            self.assertTrue(any(command[:3] == ["javac", "--release", "17"] for command in commands))
+            self.assertTrue(any(command[1:] == ["-m", "compileall", "-q", "."] for command in commands))
+            self.assertEqual(
+                sum(command[1:3] == ["-m", "unittest"] for command in commands), 1
+            )
+            go_environment = next(
+                invocation.args[2] for invocation in run_command.call_args_list
+                if invocation.args[0][:2] == ["go", "test"]
+            )
+            self.assertEqual(go_environment["GOPROXY"], "off")
+            self.assertEqual(go_environment["GOTOOLCHAIN"], "local")
+            self.assertEqual(gofmt_command.call_args.args[0][:2], ["gofmt", "-l"])
+
+    def test_failure_has_concise_error_message(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            repository = cases / "go-case/repository"
+            repository.mkdir(parents=True)
+            (repository / "go.mod").write_text("module example.org/check\n")
+            (cases / "go-case/change.diff").write_text("sample patch\n")
+            output = StringIO()
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run", side_effect=RuntimeError("patch failed")
+            ), redirect_stdout(output):
+                self.assertEqual(check_language_fixtures.main(), 1)
+            self.assertEqual(output.getvalue(), "ERROR: patch failed\n")
+
+
+class EvaluationFixtureTests(unittest.TestCase):
+    def test_negative_cases_require_no_findings_and_empty_finding_fields(self) -> None:
+        valid = {
+            "must_report": [],
+            "must_not_report": ["An unsupported finding"],
+            "prefixes": [],
+            "output": "no_findings",
+        }
+        case_path = Path("tests/cases/example/case.json")
+        self.assertEqual(run_evaluations.negative_expectation_errors(valid, case_path), [])
+
+        invalid_values = {
+            "output": "findings",
+            "must_report": ["A finding"],
+            "prefixes": ["MUST(Functionality)"],
+            "must_not_report": [],
+        }
+        for field, value in invalid_values.items():
+            with self.subTest(field=field):
+                expectations = {**valid, field: value}
+                errors = run_evaluations.negative_expectation_errors(
+                    expectations, case_path
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn(field if field != "output" else "no_findings", errors[0])
+
+    def test_mixed_noise_cases_need_evidence_and_both_candidate_types(self) -> None:
+        case = {
+            "kind": "positive",
+            "source": "original-synthetic",
+            "ecosystem": "Go 1.22",
+            "assumptions": ["Documented contract"],
+            "limitations": ["No model execution"],
+            "expected_evidence": ["Changed function and unchanged caller"],
+            "expectations": {
+                "must_report": ["Valid defect"],
+                "must_not_report": ["Invalid candidate"],
+            },
+        }
+        case_path = Path("tests/cases/example/case.json")
+        self.assertEqual(run_evaluations.mixed_noise_errors(case, case_path), [])
+        incomplete = {
+            **case,
+            "expected_evidence": [],
+            "expectations": {"must_report": ["Valid defect"], "must_not_report": []},
+        }
+        errors = run_evaluations.mixed_noise_errors(incomplete, case_path)
+        self.assertEqual(len(errors), 2)
+        self.assertTrue(any("expected_evidence" in error for error in errors))
+        self.assertTrue(any("valid and invalid candidates" in error for error in errors))
+        for field in ("must_report", "must_not_report"):
+            invalid_values = (
+                "candidate", {"finding": "candidate"}, [""], ["  "],
+                [42], ["valid", None],
+            )
+            for invalid in invalid_values:
+                with self.subTest(field=field, invalid=invalid):
+                    malformed = {
+                        **case,
+                        "expectations": {**case["expectations"], field: invalid},
+                    }
+                    errors = run_evaluations.mixed_noise_errors(malformed, case_path)
+                    self.assertEqual(len(errors), 1)
+                    self.assertIn("valid and invalid candidates", errors[0])
+        external = {**case, "source": "https://example.org/source"}
+        errors = run_evaluations.mixed_noise_errors(external, case_path)
+        self.assertEqual(len(errors), 4)
+        self.assertTrue(any("redistribution_basis" in error for error in errors))
+
+    def test_optional_findings_require_a_positive_findings_contract(self) -> None:
+        case_path = Path("tests/cases/example/case.json")
+        valid = {
+            "must_report": ["Required defect"],
+            "may_report": ["Optional test gap"],
+            "output": "findings",
+        }
+        self.assertEqual(
+            run_evaluations.optional_expectation_errors(valid, case_path, "positive"),
+            [],
+        )
+        for invalid in ([], [""], [42], "Optional test gap"):
+            with self.subTest(may_report=invalid):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, "may_report": invalid}, case_path, "positive"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn("invalid optional may_report", errors[0])
+        for overrides, expected in (
+            ({"output": "no_findings"}, "findings output"),
+            ({"must_report": []}, "non-empty must_report"),
+        ):
+            with self.subTest(overrides=overrides):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, **overrides}, case_path, "instruction-conflict"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn(expected, errors[0])
+        for may_report in ([], ["Optional test gap"]):
+            with self.subTest(negative_may_report=may_report):
+                errors = run_evaluations.optional_expectation_errors(
+                    {**valid, "may_report": may_report}, case_path, "negative"
+                )
+                self.assertEqual(len(errors), 1)
+                self.assertIn("negative case", errors[0])
 
 
 if __name__ == "__main__":

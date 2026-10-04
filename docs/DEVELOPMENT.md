@@ -19,9 +19,10 @@ agent. Do not edit generated package files directly.
 5. Inspect the generated diff for unintended or source-specific content.
 6. Run the affected cases manually in both Codex and Claude Code.
 
-The maintainer records manual results outside the public repository while the
-project is private. A generated-file-only change is invalid because the next
-build overwrites it.
+The maintainer may publish sanitized manual evaluation summaries in
+`tests/results/`. Keep raw transcripts and sensitive details outside the
+repository. A generated-file-only change is invalid because the next build
+overwrites it.
 
 ## Distribution guarantees
 
