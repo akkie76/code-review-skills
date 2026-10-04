@@ -26,8 +26,9 @@ release while any required item remains incomplete.
 - [ ] Adjudicate every observed missed required finding, prohibited finding,
       prefix mismatch, or unsupported factual claim. Do not accept a missed
       security/data-loss defect or a false-positive finding as a harmless
-      formatting deviation. A non-central prefix or supporting-detail error
-      may be accepted for this beta only when its impact, rationale, and
+      formatting deviation. A non-critical omitted `SHOULD`, `BETTER`, or
+      `NITS` finding, a non-central prefix difference, or a supporting-detail
+      error may be accepted for this beta only when its impact, rationale, and
       follow-up are recorded in the evaluation summary and release notes.
 - [ ] For Claude Code, record the CLI version, model, Skill revision, and
       request language. In each fresh session, confirm Skill invocation from
