@@ -212,6 +212,8 @@ def main() -> int:
         "docs/VERSIONING.ja.md",
         "docs/releases/v0.1.0-beta.1.md",
         "docs/releases/v0.1.0-beta.1.ja.md",
+        "docs/releases/v0.1.0-beta.2.md",
+        "docs/releases/v0.1.0-beta.2.ja.md",
         "tests/README.md",
         "tests/README.ja.md",
         "tests/RESULT_TEMPLATE.md",
