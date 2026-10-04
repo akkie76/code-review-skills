@@ -36,23 +36,26 @@ def check_fixtures() -> int:
         repository = case / "repository"
         if not repository.is_dir():
             continue
-        is_go = (repository / "go.mod").is_file()
-        is_java = any(repository.rglob("*.java"))
-        is_python = any(repository.rglob("*.py"))
-        if not (is_go or is_java or is_python):
-            continue
-
         with tempfile.TemporaryDirectory() as directory:
             checkout = Path(directory) / case.name
             shutil.copytree(repository, checkout)
             run(["git", "apply", str((case / "change.diff").resolve())], checkout)
 
+            go_sources = sorted(checkout.rglob("*.go"))
+            go_module = checkout / "go.mod"
+            is_go = go_module.is_file() or bool(go_sources)
+            is_java = any(checkout.rglob("*.java"))
+            is_python = any(checkout.rglob("*.py"))
+            if not (is_go or is_java or is_python):
+                continue
+
             if is_go:
-                sources = sorted(checkout.rglob("*.go"))
-                if not sources:
+                if not go_module.is_file():
+                    raise RuntimeError(f"{case.name}: Go sources require go.mod")
+                if not go_sources:
                     raise RuntimeError(f"{case.name}: Go module contains no .go files")
                 result = subprocess.run(
-                    ["gofmt", "-l", *(str(source) for source in sources)],
+                    ["gofmt", "-l", *(str(source) for source in go_sources)],
                     cwd=checkout,
                     text=True,
                     capture_output=True,
