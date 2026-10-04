@@ -96,7 +96,8 @@ The [2026-10-04 Codex release-candidate sample](results/2026-10-04.md)
 records selected beta.2 runs and explicitly does not claim all-fixture coverage.
 The [2026-10-04 Claude Code release-candidate evaluation](results/2026-10-04-claude.md)
 records all 28 fixtures, one additional Japanese negative run, and the two
-prefix mismatches that keep the exact all-fixture gate open.
+prefix mismatches. The strict score remains 27/29 even if the beta release
+decision accepts the documented deviations.
 
 ## Multi-agent evaluation boundary
 
