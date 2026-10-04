@@ -161,6 +161,65 @@ class BuildTests(unittest.TestCase):
 
 
 class LanguageFixtureTests(unittest.TestCase):
+    def test_detects_languages_added_by_patch(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            for case_name in ("go-case", "java-case", "python-case"):
+                repository = cases / case_name / "repository"
+                repository.mkdir(parents=True)
+                (repository / "README.md").write_text("baseline\n", encoding="utf-8")
+                (cases / case_name / "change.diff").write_text(
+                    "sample patch\n", encoding="utf-8"
+                )
+
+            def apply_fixture_patch(
+                command: list[str], cwd: Path, env: dict[str, str] | None = None
+            ) -> None:
+                if command[:2] != ["git", "apply"]:
+                    return
+                if cwd.name == "go-case":
+                    (cwd / "go.mod").write_text("module example.org/check\n")
+                    (cwd / "check.go").write_text("package check\n")
+                elif cwd.name == "java-case":
+                    (cwd / "Check.java").write_text("class Check {}\n")
+                elif cwd.name == "python-case":
+                    (cwd / "check.py").write_text("value = 1\n")
+
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run", side_effect=apply_fixture_patch
+            ) as run_command, patch.object(
+                check_language_fixtures.subprocess, "run"
+            ) as gofmt_command, redirect_stdout(StringIO()):
+                gofmt_command.return_value.returncode = 0
+                gofmt_command.return_value.stdout = ""
+                self.assertEqual(check_language_fixtures.check_fixtures(), 0)
+
+            commands = [invocation.args[0] for invocation in run_command.call_args_list]
+            self.assertEqual([command[:2] for command in commands].count(["git", "apply"]), 3)
+            self.assertIn(["go", "test", "./..."], commands)
+            self.assertTrue(any(command[:3] == ["javac", "--release", "17"] for command in commands))
+            self.assertTrue(any(command[1:] == ["-m", "compileall", "-q", "."] for command in commands))
+            gofmt_command.assert_called_once()
+
+    def test_rejects_added_go_source_without_module(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            repository = cases / "go-case/repository"
+            repository.mkdir(parents=True)
+            (repository / "README.md").write_text("baseline\n", encoding="utf-8")
+            (cases / "go-case/change.diff").write_text("sample patch\n", encoding="utf-8")
+
+            def add_go_source(
+                command: list[str], cwd: Path, env: dict[str, str] | None = None
+            ) -> None:
+                (cwd / "check.go").write_text("package check\n", encoding="utf-8")
+
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run", side_effect=add_go_source
+            ):
+                with self.assertRaisesRegex(RuntimeError, "Go sources require go.mod"):
+                    check_language_fixtures.check_fixtures()
+
     def test_checks_applied_go_java_and_python_fixtures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             cases = Path(directory)
