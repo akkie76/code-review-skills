@@ -48,11 +48,9 @@ class ReleaseCheckTests(unittest.TestCase):
             releases = root / "docs/releases"
             releases.mkdir(parents=True)
             for suffix in ("", ".ja"):
-                unreleased_label = "未リリース" if suffix else "Unreleased"
                 (root / f"CHANGELOG{suffix}.md").write_text(
                     f"## [{version}] - 2026-10-02\n"
-                    f"[{version}]: https://github.com/akkie76/code-review-skills/releases/tag/{tag}\n"
-                    f"[{unreleased_label}]: https://github.com/akkie76/code-review-skills/compare/{tag}...HEAD\n",
+                    f"[{version}]: https://github.com/akkie76/code-review-skills/releases/tag/{tag}\n",
                     encoding="utf-8",
                 )
                 (releases / f"{tag}{suffix}.md").write_text(
@@ -69,37 +67,35 @@ class ReleaseCheckTests(unittest.TestCase):
                     release_check.version_consistency_errors(True),
                 )
                 git_command.return_value = tag + "\n"
-                for suffix, language, label in (
-                    ("", "English", "Unreleased"),
-                    (".ja", "Japanese", "未リリース"),
+                for suffix, language in (
+                    ("", "English"),
+                    (".ja", "Japanese"),
                 ):
                     changelog = root / f"CHANGELOG{suffix}.md"
                     correct = changelog.read_text(encoding="utf-8")
                     changelog.write_text(
                         correct.replace(
-                            f"/compare/{tag}...HEAD",
-                            "/compare/v0.1.0-beta.1...HEAD",
+                            f"/releases/tag/{tag}",
+                            "/releases/tag/v0.1.0-beta.1",
                         ),
                         encoding="utf-8",
                     )
                     self.assertTrue(
                         any(
-                            f"{language} changelog needs an {label} comparison link"
+                            f"{language} changelog needs a {tag} release link"
                             in error
                             for error in release_check.version_consistency_errors(True)
                         )
                     )
                     changelog.write_text(correct, encoding="utf-8")
-                (root / "CHANGELOG.ja.md").write_text(
-                    "## [Unreleased]\n", encoding="utf-8"
-                )
+                (root / "CHANGELOG.ja.md").write_text("", encoding="utf-8")
                 errors = release_check.version_consistency_errors(True)
                 self.assertTrue(
                     any("Japanese changelog needs a dated" in error for error in errors)
                 )
                 self.assertTrue(
                     any(
-                        "Japanese changelog needs an 未リリース comparison link" in error
+                        "Japanese changelog needs a v0.1.0-beta.2 release link" in error
                         for error in errors
                     )
                 )

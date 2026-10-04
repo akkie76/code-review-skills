@@ -92,6 +92,15 @@ See the [2026-10-01 evaluation summary](results/2026-10-01.md) for the first
 fresh-session Codex sample. The [2026-10-02 summary](results/2026-10-02.md)
 records the Claude Code sample, including runs in which the Skill was not
 invoked and issues found outside the fixture expectations.
+The [2026-10-04 Codex release-candidate sample](results/2026-10-04.md)
+records selected beta.2 runs and explicitly does not claim all-fixture coverage.
+The [2026-10-04 Codex all-fixture evaluation](results/2026-10-04-codex-full.md)
+records 29 fresh runs, a 25/29 strict fixture score, and the four adjudicated
+deviations without converting them into passes.
+The [2026-10-04 Claude Code release-candidate evaluation](results/2026-10-04-claude.md)
+records all 28 fixtures, one additional Japanese negative run, and the two
+prefix mismatches. The strict score remains 27/29 even if the beta release
+decision accepts the documented deviations.
 
 ## Multi-agent evaluation boundary
 
