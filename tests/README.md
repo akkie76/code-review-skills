@@ -151,6 +151,11 @@ The [2026-10-04 Claude Code release-candidate evaluation](results/2026-10-04-cla
 records all 28 fixtures, one additional Japanese negative run, and the two
 prefix mismatches. The strict score remains 27/29 even if the beta release
 decision accepts the documented deviations.
+The [2026-10-06 Codex remaining-batch evaluation](results/2026-10-06-codex-remaining.md)
+records 19 remaining cases at one revision (16/19 strict matches), plus a
+successful targeted test-gap rerun after clarifying verification-risk findings.
+It also preserves classification differences and the unvalidated delegation
+boundary; it is not a full 28-case run at the final revision.
 
 ## Multi-agent evaluation boundary
 
