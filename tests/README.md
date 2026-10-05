@@ -50,6 +50,43 @@ using diff size or the number of findings as a quality measure. The wider
 suite also contains JavaScript cases, giving meaningful examples in four
 languages overall.
 
+## Opt-in local Codex runs (initial automation)
+
+`make test` remains offline and never calls a model. To plan a Codex run without
+using tokens, specify one or more case IDs (or explicitly select `--all`):
+
+```sh
+make eval EVAL_ARGS="--case negative-refactor --runs 2"
+```
+
+The default language is English when a case has an English request, otherwise
+Japanese. Use `--language en` or `--language ja` for an explicit language.
+Add `--execute` to make the model calls. Each run uses a new temporary Git
+repository containing the fixture baseline and the generated Codex Skill under
+`.agents/skills/`. The patch remains an uncommitted, visible working-tree diff.
+Codex runs in read-only, non-interactive, ephemeral mode. The runner does not
+use the dangerous sandbox-bypass option. You can set `--model` and `--timeout`;
+otherwise it uses the local CLI default model and a ten-minute timeout per run.
+The default output is a newly created, private local directory outside this
+repository; use `--output-dir` to choose a new directory elsewhere. The runner
+prints its location. It saves `events.jsonl`, `answer.txt`, and `stderr.txt` for
+each run, plus `summary.json`. Do not commit these raw files. Remove the local
+directory when it is no longer needed, and check its contents before sharing.
+
+The summary records the agent version, requested model or `unavailable`, Skill
+revision, settings, selected cases, run count, available token usage, and
+provisional prefix/no-finding checks, and whether a successful Skill-file read
+appeared in CLI events. It omits raw review text. A file read alone does not
+prove that the Skill influenced the review. The runner does **not** confirm
+Skill invocation, score semantic matches, classify unexpected findings,
+calculate finding-level metrics, or establish an accuracy rate. Review
+the raw events and answer against `case.json`, record invocation separately,
+and classify unexpected claims as valid, ambiguous, duplicate, or unsupported.
+Use the manual record below for that judgment. Agent calls may consume
+substantial tokens; the dry run and explicit `--execute` gate are intentional.
+This is the first stage of [issue #24](https://github.com/akkie76/code-review-skills/issues/24),
+not a replacement for the two-agent release evaluation.
+
 ## Manual agent evaluation
 
 Run each case separately with both Codex and Claude Code:

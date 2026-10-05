@@ -11,7 +11,72 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import build, release_check
-from tests import check_language_fixtures, run_evaluations
+from tests import agent_eval, check_language_fixtures, run_evaluations
+
+
+class AgentEvaluationTests(unittest.TestCase):
+    def test_dry_run_never_calls_agent(self) -> None:
+        with patch.object(agent_eval, "evaluate_one") as evaluate, redirect_stdout(StringIO()) as output:
+            self.assertEqual(
+                agent_eval.main(["--case", "negative-refactor", "--runs", "2"]), 0
+            )
+        evaluate.assert_not_called()
+        self.assertIn("No model calls made", output.getvalue())
+
+    def test_prepare_repository_installs_skill_and_exposes_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "fixture"
+            agent_eval.prepare_repository(
+                agent_eval.CASES / "negative-refactor", destination
+            )
+            self.assertTrue(
+                (destination / ".agents/skills/evidence-code-review/SKILL.md").is_file()
+            )
+            diff = agent_eval.run_command(["git", "diff", "--name-only"], destination)
+            self.assertEqual(diff.returncode, 0)
+            self.assertIn("ReportService.java", diff.stdout)
+            self.assertNotIn("SKILL.md", diff.stdout)
+
+    def test_observed_checks_are_provisional(self) -> None:
+        positive = agent_eval.observed_output(
+            "- MUST(Functionality): confirmed defect\n", {
+                "prefixes": ["MUST(Functionality)"], "output": "findings"
+            }
+        )
+        self.assertTrue(positive["required_prefixes_present"])
+        self.assertEqual(positive["semantic_judgment"], "pending_human_review")
+        negative = agent_eval.observed_output(
+            "No findings.\n", {"prefixes": [], "output": "no_findings"}
+        )
+        self.assertTrue(negative["negative_output_check"])
+
+    def test_event_usage_uses_completed_turn(self) -> None:
+        events = '\n'.join([
+            '{"type":"thread.started"}',
+            '{"type":"turn.completed","usage":{"input_tokens":12,"output_tokens":3}}',
+        ])
+        self.assertEqual(
+            agent_eval.event_usage(events), {"input_tokens": 12, "output_tokens": 3}
+        )
+
+    def test_skill_read_requires_successful_completed_command(self) -> None:
+        events = '\n'.join([
+            '{"type":"item.completed","item":{"type":"command_execution",'
+            '"command":"cat .agents/skills/evidence-code-review/SKILL.md",'
+            '"exit_code":1,"aggregated_output":"name: evidence-code-review"}}',
+            '{"type":"item.completed","item":{"type":"command_execution",'
+            '"command":"cat .agents/skills/evidence-code-review/SKILL.md",'
+            '"exit_code":0,"aggregated_output":"name: evidence-code-review"}}',
+        ])
+        self.assertTrue(agent_eval.skill_file_read_observed(events))
+
+    def test_auto_language_selects_available_request(self) -> None:
+        selected = agent_eval.selected_cases(["must-stale-documentation"], False, "auto")
+        self.assertEqual(selected[0][3], "ja")
+
+    def test_rejects_result_directory_inside_repository(self) -> None:
+        with self.assertRaisesRegex(ValueError, "outside this repository"):
+            agent_eval.output_directory(agent_eval.ROOT / "tests/results/local")
 
 
 class ReleaseCheckTests(unittest.TestCase):
