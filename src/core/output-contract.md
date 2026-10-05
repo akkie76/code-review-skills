@@ -47,8 +47,14 @@ not present subjective taste as an improvement.
 
 Use `NITS` for a minor, non-blocking correction such as a typo, misleading
 local wording, or a clearly established convention that automation does not
-cover. Use it sparingly. Do not report formatter output or manufacture trivial
-comments to make the review appear complete.
+cover. Report an unambiguous spelling error introduced on changed lines as a
+`NITS` finding even when it does not affect runtime behavior; for an identifier,
+use `NITS(Naming)`. Describe only its proportionate readability, searchability,
+or presentation impact, and do not make it sound like a merge blocker. If the
+typo changes an API or behavior, classify the actual impact instead. Use NITS
+sparingly: do not report valid but unfamiliar names, personal naming or wording
+preferences, pre-existing typos, or formatter output, and do not manufacture
+trivial comments to make the review appear complete.
 
 ## Select the review viewpoint
 
@@ -59,7 +65,8 @@ Choose the single viewpoint that best explains why the comment matters:
 - `Simplicity`: unnecessary complexity or control flow that creates a concrete
   comprehension or maintenance cost.
 - `Naming`: an identifier that misstates behavior, units, ownership,
-  cardinality, or side effects.
+  cardinality, or side effects, or contains an unambiguous spelling error
+  introduced by the change.
 - `Style`: an established project convention whose violation has a concrete
   cost and is not already enforced automatically.
 - `Functionality`: correctness, interfaces, data flow, performance,
