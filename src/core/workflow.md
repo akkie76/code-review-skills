@@ -1,8 +1,8 @@
 # Review Workflow
 
 Use this workflow to review a proposed code change. The objective is to find
-actionable defects introduced by the change, not to produce the largest
-possible list of comments.
+actionable defects and concrete quality or verification risks introduced by
+the change, not to produce the largest possible list of comments.
 
 ## 1. Establish the review contract
 
@@ -126,9 +126,9 @@ checklist report.
 
 Before reporting an issue, answer all of the following:
 
-- What exact behavior is wrong?
+- What verified defect or concrete quality or verification risk exists?
 - Which input, state, timing, or environment triggers it?
-- What user-visible or system-level impact follows?
+- What user-visible, system-level, maintenance, or verification impact follows?
 - Is the issue introduced by the reviewed change?
 - Does surrounding code, configuration, or a framework guarantee invalidate
   the concern?

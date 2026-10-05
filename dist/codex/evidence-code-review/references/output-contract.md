@@ -101,7 +101,8 @@ Each actionable comment must contain:
 2. **Evidence**: the relevant observed behavior or contract.
 3. **Trigger**: the input, state, timing, environment, or caller behavior that
    exposes it.
-4. **Impact**: the incorrect outcome and who or what is affected.
+4. **Impact**: the incorrect outcome or concrete quality or verification risk,
+   and who or what is affected.
 5. **Direction**: the expected outcome or a proportionate remediation
    direction without prescribing an unnecessarily large redesign.
 
