@@ -17,9 +17,29 @@ release while any required item remains incomplete.
 
 ## Behavioral validation
 
-- [ ] Every fixture passes a fresh-session evaluation in Codex.
-- [ ] Every fixture passes a fresh-session evaluation in Claude Code.
-- [ ] English and Japanese requests produce equivalent finding decisions.
+- [ ] Run a documented, fresh-session release-candidate sample in both Codex
+      and Claude Code. Cover a negative case in English and Japanese, a
+      realistic multi-file change, and the highest-risk outstanding behavior
+      concerns. Confirm Skill invocation for every result counted as a Skill
+      pass. Full-suite behavioral execution is useful evidence, but a 100%
+      exact-prefix score on every single run is not a beta release gate.
+- [ ] Adjudicate every observed missed required finding, prohibited finding,
+      prefix mismatch, or unsupported factual claim. Do not accept a missed
+      security/data-loss defect or a false-positive finding as a harmless
+      formatting deviation. A non-critical omitted `SHOULD`, `BETTER`, or
+      `NITS` finding, a non-central prefix difference, or a supporting-detail
+      error may be accepted for this beta only when its impact, rationale, and
+      follow-up are recorded in the evaluation summary and release notes.
+- [ ] For Claude Code, record the CLI version, model, Skill revision, and
+      request language. In each fresh session, confirm Skill invocation from
+      the execution trace separately from whether the output matches the
+      fixture expectations; do not count an unassisted match as a Skill pass.
+- [ ] For Claude Code, evaluate at least one negative fixture in both English
+      and Japanese and classify every unexpected finding or unsupported
+      supporting claim, including whether the behavior in #35 recurs.
+- [ ] Across the release-candidate evaluations, at least one positive and one
+      negative case produce equivalent finding decisions with English and
+      Japanese requests; state the limited scope.
 - [ ] Any unexpected finding has been classified as valid, ambiguous, or a
       false positive and reflected in the fixtures or methodology.
 
@@ -49,7 +69,7 @@ Optional quality step:
 
 - [ ] `VERSION` contains `0.1.0-beta.2`, and both generated Skill packages
       identify `v0.1.0-beta.2`.
-- [ ] `CHANGELOG.md` contains a dated `0.1.0-beta.2` section and comparison links.
+- [ ] Both changelogs contain a dated `0.1.0-beta.2` section and release link.
 - [ ] `docs/releases/v0.1.0-beta.2.md` matches the final release contents.
 - [ ] Any output-contract addition or material review-behavior change is
       explained in the release notes with relevant evaluation evidence or limits.

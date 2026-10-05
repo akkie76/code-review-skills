@@ -48,11 +48,9 @@ class ReleaseCheckTests(unittest.TestCase):
             releases = root / "docs/releases"
             releases.mkdir(parents=True)
             for suffix in ("", ".ja"):
-                unreleased_label = "未リリース" if suffix else "Unreleased"
                 (root / f"CHANGELOG{suffix}.md").write_text(
                     f"## [{version}] - 2026-10-02\n"
-                    f"[{version}]: https://github.com/akkie76/code-review-skills/releases/tag/{tag}\n"
-                    f"[{unreleased_label}]: https://github.com/akkie76/code-review-skills/compare/{tag}...HEAD\n",
+                    f"[{version}]: https://github.com/akkie76/code-review-skills/releases/tag/{tag}\n",
                     encoding="utf-8",
                 )
                 (releases / f"{tag}{suffix}.md").write_text(
@@ -69,37 +67,35 @@ class ReleaseCheckTests(unittest.TestCase):
                     release_check.version_consistency_errors(True),
                 )
                 git_command.return_value = tag + "\n"
-                for suffix, language, label in (
-                    ("", "English", "Unreleased"),
-                    (".ja", "Japanese", "未リリース"),
+                for suffix, language in (
+                    ("", "English"),
+                    (".ja", "Japanese"),
                 ):
                     changelog = root / f"CHANGELOG{suffix}.md"
                     correct = changelog.read_text(encoding="utf-8")
                     changelog.write_text(
                         correct.replace(
-                            f"/compare/{tag}...HEAD",
-                            "/compare/v0.1.0-beta.1...HEAD",
+                            f"/releases/tag/{tag}",
+                            "/releases/tag/v0.1.0-beta.1",
                         ),
                         encoding="utf-8",
                     )
                     self.assertTrue(
                         any(
-                            f"{language} changelog needs an {label} comparison link"
+                            f"{language} changelog needs a {tag} release link"
                             in error
                             for error in release_check.version_consistency_errors(True)
                         )
                     )
                     changelog.write_text(correct, encoding="utf-8")
-                (root / "CHANGELOG.ja.md").write_text(
-                    "## [Unreleased]\n", encoding="utf-8"
-                )
+                (root / "CHANGELOG.ja.md").write_text("", encoding="utf-8")
                 errors = release_check.version_consistency_errors(True)
                 self.assertTrue(
                     any("Japanese changelog needs a dated" in error for error in errors)
                 )
                 self.assertTrue(
                     any(
-                        "Japanese changelog needs an 未リリース comparison link" in error
+                        "Japanese changelog needs a v0.1.0-beta.2 release link" in error
                         for error in errors
                     )
                 )
@@ -165,6 +161,65 @@ class BuildTests(unittest.TestCase):
 
 
 class LanguageFixtureTests(unittest.TestCase):
+    def test_detects_languages_added_by_patch(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            for case_name in ("go-case", "java-case", "python-case"):
+                repository = cases / case_name / "repository"
+                repository.mkdir(parents=True)
+                (repository / "README.md").write_text("baseline\n", encoding="utf-8")
+                (cases / case_name / "change.diff").write_text(
+                    "sample patch\n", encoding="utf-8"
+                )
+
+            def apply_fixture_patch(
+                command: list[str], cwd: Path, env: dict[str, str] | None = None
+            ) -> None:
+                if command[:2] != ["git", "apply"]:
+                    return
+                if cwd.name == "go-case":
+                    (cwd / "go.mod").write_text("module example.org/check\n")
+                    (cwd / "check.go").write_text("package check\n")
+                elif cwd.name == "java-case":
+                    (cwd / "Check.java").write_text("class Check {}\n")
+                elif cwd.name == "python-case":
+                    (cwd / "check.py").write_text("value = 1\n")
+
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run", side_effect=apply_fixture_patch
+            ) as run_command, patch.object(
+                check_language_fixtures.subprocess, "run"
+            ) as gofmt_command, redirect_stdout(StringIO()):
+                gofmt_command.return_value.returncode = 0
+                gofmt_command.return_value.stdout = ""
+                self.assertEqual(check_language_fixtures.check_fixtures(), 0)
+
+            commands = [invocation.args[0] for invocation in run_command.call_args_list]
+            self.assertEqual([command[:2] for command in commands].count(["git", "apply"]), 3)
+            self.assertIn(["go", "test", "./..."], commands)
+            self.assertTrue(any(command[:3] == ["javac", "--release", "17"] for command in commands))
+            self.assertTrue(any(command[1:] == ["-m", "compileall", "-q", "."] for command in commands))
+            gofmt_command.assert_called_once()
+
+    def test_rejects_added_go_source_without_module(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases = Path(directory)
+            repository = cases / "go-case/repository"
+            repository.mkdir(parents=True)
+            (repository / "README.md").write_text("baseline\n", encoding="utf-8")
+            (cases / "go-case/change.diff").write_text("sample patch\n", encoding="utf-8")
+
+            def add_go_source(
+                command: list[str], cwd: Path, env: dict[str, str] | None = None
+            ) -> None:
+                (cwd / "check.go").write_text("package check\n", encoding="utf-8")
+
+            with patch.object(check_language_fixtures, "CASES", cases), patch.object(
+                check_language_fixtures, "run", side_effect=add_go_source
+            ):
+                with self.assertRaisesRegex(RuntimeError, "Go sources require go.mod"):
+                    check_language_fixtures.check_fixtures()
+
     def test_checks_applied_go_java_and_python_fixtures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             cases = Path(directory)

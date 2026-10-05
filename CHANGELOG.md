@@ -7,22 +7,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0-beta.2] - 2026-10-04
 
 ### Added
 
-- A canonical version file and version marker in both generated Skill packages
-  for the upcoming `v0.1.0-beta.2` release.
+- Ten negative and realistic behavioral fixtures, including larger mixed-noise
+  changes in Go, Java, and Python. The suite now contains 28 cases.
+- Java, Go, and Python fixture checks in CI after applying each case's patch.
+- A canonical version file and version marker in both generated Skill packages.
 - English and Japanese versioning and output-compatibility policies, with
   release checks for package versions and tagged release artifacts.
-- A sanitized Claude Code evaluation record that separates fixture matches
-  from Skill invocation, plus clearer optional-finding scoring guidance.
+- Sanitized Codex and Claude Code evaluation records that distinguish fixture
+  matches from Skill invocation and document their limitations.
+- An accuracy-improvement proposal Issue form for evidence-backed suggestions
+  that have not yet been tested with the Skill.
 
 ### Changed
 
 - Clarified that repository review instructions complement the Skill rather
   than replace it when selecting the Skill for a review request.
 - Documented explicit Claude Code invocation when automatic selection varies.
+- Clarified how optional findings are scored without weakening the evidence
+  required for every factual claim.
+- Linked the publisher's official page for *コードレビューの教科書* from both READMEs.
 
 ## [0.1.0-beta.1] - 2026-09-27
 
@@ -59,5 +66,5 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Structured Issue forms and a support policy for evidence-backed beta
   feedback while keeping pull requests subject to prior agreement.
 
-[Unreleased]: https://github.com/akkie76/code-review-skills/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.2]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.1
