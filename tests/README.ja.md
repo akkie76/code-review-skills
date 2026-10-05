@@ -30,6 +30,13 @@ Pythonの構文コンパイルを行います。patch適用後のPython fixture�
 Goの依存関係のダウンロードは無効です。いずれの検査も、エージェントが実際に
 誤検知を抑制するかは検証しません。
 
+Batch 3のfixtureは、リポジトリの契約を示して文書とテスト不足の指摘を評価します。
+`must-stale-documentation`では`API_TOKEN`必須化が承認済みの変更であると明記し、
+setup guideには匿名モードの説明を残しています。`should-missing-test`では、
+冪等な読み取りと再試行の契約を明記し、patchでnull・undefinedの拒否理由を保持します。
+既存テストは成功系だけのままです。これらの整理で必須指摘は変更せず、過去の評価結果を
+遡って変更しません。実行を比較するときはrevisionを記録してください。
+
 `realistic-go-directory`、`realistic-java-fulfillment`、
 `realistic-python-profile`、`realistic-python-retry-audit`、
 `realistic-python-notice-batch`は、対応が必要な変更と無関係でもっともらしい変更を

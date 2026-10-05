@@ -34,6 +34,15 @@ modules, and compiles Python source files. Where the patched Python fixture has
 those runtimes are installed; Go dependency downloads are disabled. Neither
 check establishes that an agent actually suppresses false positives.
 
+The Batch 3 fixtures isolate documentation and test-coverage findings through
+repository contracts. `must-stale-documentation` states that requiring
+`API_TOKEN` is an approved change; its setup guide still describes anonymous
+mode. `should-missing-test` documents an idempotent read and its retry contract,
+and its patch preserves null and undefined rejection reasons. Its existing
+test remains success-only. These fixture clarifications do not change the
+required findings or retroactively change earlier evaluation results. Record
+the revision when comparing runs.
+
 The mixed-noise cases (`realistic-go-directory`, `realistic-java-fulfillment`,
 `realistic-python-profile`, `realistic-python-retry-audit`, and
 `realistic-python-notice-batch`) combine actionable changes with unrelated,
