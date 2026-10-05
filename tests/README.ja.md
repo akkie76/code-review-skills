@@ -53,6 +53,10 @@ Codexの実行予定を確認するには、case IDを1つ以上（または明�
 make eval EVAL_ARGS="--case negative-refactor --language ja --runs 2"
 ```
 
+全caseを初回評価する際は、[4グループの分割実行計画](EVALUATION_BATCHES.ja.md)を
+使用してください。実際の呼び出しを最大2caseに分け、次のbatchへ進む前に残りの
+利用枠を確認します。
+
 言語指定を省略すると、英語依頼があるcaseでは英語、ないcaseでは日本語を選びます。
 実際にモデルを呼び出す場合のみ`--execute`を追加します。実行ごとに一時Gitリポジトリを
 新規作成し、fixtureの元ファイルと生成済みCodex Skillを`.agents/skills/`へ配置します。

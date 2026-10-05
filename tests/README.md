@@ -59,6 +59,10 @@ using tokens, specify one or more case IDs (or explicitly select `--all`):
 make eval EVAL_ARGS="--case negative-refactor --runs 2"
 ```
 
+For a token-conscious first pass over the full suite, use the
+[four-group batch plan](EVALUATION_BATCHES.md). It keeps each actual invocation
+to at most two cases and requires an allowance check before the next batch.
+
 The default language is English when a case has an English request, otherwise
 Japanese. Use `--language en` or `--language ja` for an explicit language.
 Add `--execute` to make the model calls. Each run uses a new temporary Git
