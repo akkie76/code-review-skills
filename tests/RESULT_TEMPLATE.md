@@ -24,6 +24,11 @@
 - Prohibited behavior observed:
 - Additional comments:
 - Classification of unexpected output: valid / ambiguous / false positive
+- Campaign manifest hash / phase (primary or repeat):
+- Required expectation indices detected / missed:
+- Optional / valid additional / duplicate / unsupported findings:
+- Unsupported supporting claims / prohibited expectation indices:
+- Human finalization / reviewer / unresolved judgments:
 - Grading inputs / excluded files / redactions:
 - Indeterminate claims due to grading exclusions / reconciliation evidence:
 - Follow-up:

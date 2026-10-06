@@ -1,0 +1,14 @@
+{
+  "id": "issue-24-human-adjudication-v1",
+  "threshold_percent": 80,
+  "primary": "all_cases_auto_language_plus_negative_refactor_ja",
+  "repeat_cases": [
+    "nits-misspelled-local",
+    "must-stale-documentation",
+    "should-missing-test",
+    "nits-change-created-dead-code",
+    "should-layer-boundary",
+    "must-verified-supporting-evidence"
+  ],
+  "repeat_runs": 1
+}

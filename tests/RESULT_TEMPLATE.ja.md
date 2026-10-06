@@ -24,6 +24,11 @@
 - 禁止する動作を確認：
 - 追加コメント：
 - 予期しない出力の分類：valid / ambiguous / false positive
+- campaignのmanifest hash / 区分（primary・repeat）：
+- 検出した必須項目index / 見逃した項目：
+- 任意 / 妥当な追加 / 重複 / 根拠不足の指摘：
+- 根拠不足の補足 / 禁止された期待項目index：
+- 人による確定 / reviewer / 未確定の判定：
 - 採点入力 / 除外ファイル / 置換内容：
 - 採点入力の除外による未確定の主張 / 照合した根拠：
 - follow-up：

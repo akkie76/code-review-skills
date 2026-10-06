@@ -59,7 +59,13 @@ using diff size or the number of findings as a quality measure. The wider
 suite also contains JavaScript cases, giving meaningful examples in four
 languages overall.
 
-## Opt-in local Codex runs (initial automation)
+## Opt-in local agent runs
+
+Codex is the default. Use `--agent claude` to install the Claude package and run
+its non-interactive static-only protocol. Claude authentication and the chosen
+model must be available on the executing PC. The Codex-specific details below
+do not imply equivalent Claude sandbox behavior; see the shared
+[campaign protocol](EVALUATION_RUBRIC.md).
 
 `make test` remains offline and never calls a model. To plan a Codex run without
 using tokens, specify one or more case IDs (or explicitly select `--all`):
@@ -128,6 +134,13 @@ This is the first stage of [issue #24](https://github.com/akkie76/code-review-sk
 not a replacement for the two-agent release evaluation.
 
 ## Manual agent evaluation
+
+For issue #24's 80-point campaign, use the [adjudication rubric and scoring
+workflow](EVALUATION_RUBRIC.md). `make eval-score` freezes the input manifest,
+imports raw runner summaries into unreviewed local annotations, and aggregates
+human-finalized judgments. `make eval` also accepts `--agent claude` for the
+documented static-only protocol. Both commands are offline unless the runner
+is explicitly given `--execute`; scoring never calls a model.
 
 Run each case separately with both Codex and Claude Code:
 
