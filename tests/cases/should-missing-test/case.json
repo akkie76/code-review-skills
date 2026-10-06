@@ -9,7 +9,11 @@
     "must_report": [
       "The new timeout retry and exhaustion paths are not covered by the existing success-only test."
     ],
-    "must_not_report": ["Demand a test for every changed line."],
+    "must_not_report": [
+      "Demand a test for every changed line.",
+      "Claim that retrying the documented idempotent read duplicates unsafe side effects.",
+      "Claim that null or undefined rejection reasons are replaced by a TypeError despite the guarded property access."
+    ],
     "prefixes": ["SHOULD(Test)"],
     "output": "findings"
   }

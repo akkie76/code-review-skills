@@ -13,13 +13,13 @@ Do not modify the reviewed code unless the user separately asks for changes.
 
 <!-- skill-version: v0.1.0-beta.2 -->
 
-<!-- source-sha256: e8f57bd7b179d798f100bdc5444d8cdaf2549ef021d7a959539da80cee35733b -->
+<!-- source-sha256: 97e88de00a6769ad9d626c875ef268ca71ecdd3e15731475c4d47baee1e6578f -->
 
 # Review Workflow
 
 Use this workflow to review a proposed code change. The objective is to find
-actionable defects introduced by the change, not to produce the largest
-possible list of comments.
+actionable defects and concrete quality or verification risks introduced by
+the change, not to produce the largest possible list of comments.
 
 ## 1. Establish the review contract
 
@@ -143,9 +143,9 @@ checklist report.
 
 Before reporting an issue, answer all of the following:
 
-- What exact behavior is wrong?
+- What verified defect or concrete quality or verification risk exists?
 - Which input, state, timing, or environment triggers it?
-- What user-visible or system-level impact follows?
+- What user-visible, system-level, maintenance, or verification impact follows?
 - Is the issue introduced by the reviewed change?
 - Does surrounding code, configuration, or a framework guarantee invalidate
   the concern?

@@ -34,6 +34,15 @@ modules, and compiles Python source files. Where the patched Python fixture has
 those runtimes are installed; Go dependency downloads are disabled. Neither
 check establishes that an agent actually suppresses false positives.
 
+The Batch 3 fixtures isolate documentation and test-coverage findings through
+repository contracts. `must-stale-documentation` states that requiring
+`API_TOKEN` is an approved change; its setup guide still describes anonymous
+mode. `should-missing-test` documents an idempotent read and its retry contract,
+and its patch preserves null and undefined rejection reasons. Its existing
+test remains success-only. These fixture clarifications do not change the
+required findings or retroactively change earlier evaluation results. Record
+the revision when comparing runs.
+
 The mixed-noise cases (`realistic-go-directory`, `realistic-java-fulfillment`,
 `realistic-python-profile`, `realistic-python-retry-audit`, and
 `realistic-python-notice-batch`) combine actionable changes with unrelated,
@@ -49,6 +58,74 @@ concern, including candidates listed under `must_not_report`, rather than
 using diff size or the number of findings as a quality measure. The wider
 suite also contains JavaScript cases, giving meaningful examples in four
 languages overall.
+
+## Opt-in local Codex runs (initial automation)
+
+`make test` remains offline and never calls a model. To plan a Codex run without
+using tokens, specify one or more case IDs (or explicitly select `--all`):
+
+```sh
+make eval EVAL_ARGS="--case negative-refactor --runs 2"
+```
+
+For a token-conscious first pass over the full suite, use the
+[four-group batch plan](EVALUATION_BATCHES.md). It keeps each actual invocation
+to at most two cases and requires an allowance check before the next batch.
+
+The default language is English when a case has an English request, otherwise
+Japanese. Use `--language en` or `--language ja` for an explicit language.
+Add `--execute` to make the model calls. Each run uses a new temporary Git
+repository containing the fixture baseline and the generated Codex Skill under
+`.agents/skills/`. The workspace uses a neutral random `repo-` name and a
+`Developer` baseline author; case IDs stay in the local result directory.
+The patch remains an uncommitted, visible working-tree diff.
+Codex runs in read-only, non-interactive, ephemeral mode. The runner does not
+use the dangerous sandbox-bypass option. You can set `--model` and `--timeout`;
+otherwise it uses the local CLI default model and a ten-minute timeout per run.
+The default output is a newly created, private local directory outside this
+repository; use `--output-dir` to choose a new directory elsewhere. The runner
+rejects both explicit paths and a default temporary location (`TMPDIR`) that
+resolve inside this repository, including symlinks, before creating output.
+Choose an outside-repository `--output-dir` if your temporary location is rejected.
+The runner prints its location. It saves `events.jsonl`, `answer.txt`, and `stderr.txt` for
+each run, plus `summary.json`. Do not commit these raw files. Remove the local
+directory when it is no longer needed, and check its contents before sharing.
+
+Schema 2 summaries separate the requested model from any model reported in CLI
+startup events or the stderr model header. If the CLI supplies no model
+metadata, `observed_model` remains null; an explicitly requested model is not
+claimed as observed. Summaries also record the repository revision, whole-tree
+dirty state, relevant evaluation-input dirty state, and the installed Skill's
+version, generated source hash, and actual package hash. Each run hashes the
+package copied into that run's repository, including its references. Unrelated
+untracked files may set `worktree_dirty` without setting
+`evaluation_inputs_dirty`; the latter covers `src`, `dist`, `tests/cases`, and
+the runner. A revision alone does not identify uncommitted inputs.
+
+The checks accept Markdown headings, numbered lists, emphasis, and inline-code
+titles. For negative cases, `negative_output_check` only means a nonempty answer
+contains no recognized finding prefix. `explicit_no_findings` separately
+records a best-effort phrase match for informational use only: it can miss
+no-finding statements or match partial statements alongside real findings.
+It is never a pass/fail signal. An unprefixed defect claim can therefore pass
+the syntax check; it still needs human adjudication. Empty output is not a pass
+and causes a nonzero runner exit. Old summaries and evaluations are not
+rewritten by these changes.
+
+Settings, selected cases, run count, available token usage, and Skill-read
+evidence are recorded as well. A completed command can establish a read even
+when a later command in the same shell fails, if its output contains the entire
+installed Skill text. Partial output from a failed command is insufficient.
+Raw review text is omitted from the summary. A file read alone does not prove
+that the Skill influenced the review. The runner does **not** confirm
+Skill invocation, score semantic matches, classify unexpected findings,
+calculate finding-level metrics, or establish an accuracy rate. Review
+the raw events and answer against `case.json`, record invocation separately,
+and classify unexpected claims as valid, ambiguous, duplicate, or unsupported.
+Use the manual record below for that judgment. Agent calls may consume
+substantial tokens; the dry run and explicit `--execute` gate are intentional.
+This is the first stage of [issue #24](https://github.com/akkie76/code-review-skills/issues/24),
+not a replacement for the two-agent release evaluation.
 
 ## Manual agent evaluation
 
@@ -82,6 +159,56 @@ not a passing result for the Skill's review behavior.
 Evaluate at least one negative case with both English and Japanese requests
 in each agent; do not infer cross-language behavior from the fixture schema.
 
+When using a blind grader, record the supplied files and any exclusions or
+redactions (for example, removing `.claude/` or replacing agent names). Tell
+the grader explicitly that the reviewer could see those excluded files.
+A repository-scope claim that cannot be verified from the reduced grading
+input is indeterminate, not automatically a false positive. Reconcile it
+against a sanitized file manifest or relevant trace before adjudication;
+do not treat absent grading evidence as proof that a claim was invented.
+
+### Claude Code protocol
+
+Use the generated Claude package from the same revision at
+`.claude/skills/evidence-code-review/` in a fresh neutral workspace. Use a
+neutral baseline author as in the Codex runner. The primary invocation mode is
+`implicit`: submit only the request from `case.json`. For an implicit run with
+no observed Skill invocation, optionally rerun explicitly with
+`/evidence-code-review <request>` as a diagnostic. Record the mode and never
+combine implicit and explicit runs into one score.
+
+Record invocation evidence separately from output matches:
+
+| Agent/mode | Evidence | Recorded value |
+| --- | --- | --- |
+| Claude, implicit | `Skill` tool call with `input.skill == "evidence-code-review"` | `confirmed`; otherwise `not_observed` |
+| Claude, explicit | Explicit command plus Skill present in the init event's `skills` list | `by_construction`, not a directly observed invocation |
+| Codex | Skill-file read in CLI events | `file_read_observed`; invocation remains `not_verified` |
+
+Reads of `references/` support the record but do not independently establish
+invocation. A Claude `not_observed` output match is not counted as a Skill pass.
+
+The Claude CLI `2.1.281` evaluation used a non-interactive static-review
+allowlist, as reported in [PR #44](https://github.com/akkie76/code-review-skills/pull/44#issuecomment-5996575210):
+
+```sh
+claude -p "<request from case.json>" \
+  --setting-sources project --strict-mcp-config --no-session-persistence \
+  --allowedTools "Read" "Grep" "Glob" "Skill" \
+    "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)" \
+  --disallowedTools "Edit" "Write" "NotebookEdit" "WebFetch" "WebSearch" \
+  --output-format stream-json --verbose
+```
+
+Select and record a model supported by the installed CLI and account. Record
+the fixed permissions, denied verification attempts, and observed CLI metadata.
+This Claude protocol does not allow fixture-code execution. Codex's read-only
+sandbox restricts writes but can permit execution, including focused Python
+checks; the two permission settings are not equivalent. Record this difference
+when comparing results. `--setting-sources project` does not prove that
+user-level Skills or memory were excluded; record that limitation or use a
+separately isolated environment if the comparison requires it.
+
 The public repository may contain dated, sanitized evaluation summaries.
 Keep raw model transcripts outside the repository. Never commit machine paths,
 private repository content, credentials, or unpublished correspondence.
@@ -101,6 +228,20 @@ The [2026-10-04 Claude Code release-candidate evaluation](results/2026-10-04-cla
 records all 28 fixtures, one additional Japanese negative run, and the two
 prefix mismatches. The strict score remains 27/29 even if the beta release
 decision accepts the documented deviations.
+The [2026-10-06 Codex remaining-batch evaluation](results/2026-10-06-codex-remaining.md)
+records 19 remaining cases at one revision (16/19 strict matches), plus a
+successful targeted test-gap rerun after clarifying verification-risk findings.
+The [2026-10-06 Claude Code report](https://github.com/akkie76/code-review-skills/pull/44#issuecomment-6007929541)
+records 29 runs at `5fb7864`, after the Skill and fixture changes: 26/29 strict
+matches and 29/29 confirmed Skill invocations. All required content was reported
+(negative cases have no required findings); three prefix disagreements remain.
+This is a maintainer-reported sample, not an independent verification or a
+same-input repeat of the earlier revision. Its unchanged score does not establish
+an accuracy improvement or regression. A claim initially flagged as unsupported
+was adjudicated as a grading artifact because installed Skill files were excluded
+from the grader's input.
+It also preserves classification differences and the unvalidated delegation
+boundary; it is not a full 28-case run at the final revision.
 
 ## Multi-agent evaluation boundary
 
