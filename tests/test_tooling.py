@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import json
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -36,6 +38,10 @@ class AgentEvaluationTests(unittest.TestCase):
             self.assertEqual(diff.returncode, 0)
             self.assertIn("ReportService.java", diff.stdout)
             self.assertNotIn("SKILL.md", diff.stdout)
+            author = agent_eval.run_command(
+                ["git", "show", "-s", "--format=%an <%ae>", "HEAD"], destination
+            )
+            self.assertEqual(author.stdout.strip(), "Developer <dev@example.invalid>")
 
     def test_observed_checks_are_provisional(self) -> None:
         positive = agent_eval.observed_output(
@@ -49,6 +55,146 @@ class AgentEvaluationTests(unittest.TestCase):
             "No findings.\n", {"prefixes": [], "output": "no_findings"}
         )
         self.assertTrue(negative["negative_output_check"])
+
+    def test_realistic_negative_answers_are_syntax_checks_only(self) -> None:
+        expected = {"prefixes": [], "output": "no_findings"}
+        answers = (
+            "No actionable findings. Removing the nil check preserves behavior.",
+            "No actionable defects found. The refactor preserves the output.",
+            "I found no actionable defects in the working tree change.",
+            "I found nothing that needs to change.",
+            "変更を確認しました。修正が必要な指摘はありません。",
+            "修正が必要な不具合は見つかりませんでした。",
+        )
+        for answer in answers:
+            with self.subTest(answer=answer):
+                observed = agent_eval.observed_output(answer, expected)
+                self.assertTrue(observed["negative_output_check"])
+                self.assertTrue(observed["explicit_no_findings"])
+                self.assertEqual(observed["semantic_judgment"], "pending_human_review")
+        # An unprefixed claim still requires human judgment, not automatic passing.
+        observed = agent_eval.observed_output("The return value is wrong.", expected)
+        self.assertTrue(observed["negative_output_check"])
+        self.assertFalse(observed["explicit_no_findings"])
+        self.assertEqual(observed["semantic_judgment"], "pending_human_review")
+        for answer in ("", " \n"):
+            self.assertFalse(agent_eval.observed_output(answer, expected)["negative_output_check"])
+        contradictory = agent_eval.observed_output(
+            "No findings.\n### MUST(Functionality): A verified defect", expected
+        )
+        self.assertTrue(contradictory["explicit_no_findings"])
+        self.assertFalse(contradictory["negative_output_check"])
+
+    def test_finding_prefixes_accept_review_markdown(self) -> None:
+        expected = {"prefixes": ["MUST(Functionality)"], "output": "findings"}
+        for title in (
+            "### MUST(Functionality): A verified defect",
+            "1. **MUST(Functionality): A verified defect**",
+            "2) __MUST(Functionality)__: A verified defect",
+            "- `MUST(Functionality): A verified defect`",
+            "**MUST(Functionality)**: A verified defect",
+            "> ### MUST(Functionality): A verified defect",
+        ):
+            with self.subTest(title=title):
+                observed = agent_eval.observed_output(title, expected)
+                self.assertEqual(observed["prefixes"], ["MUST(Functionality)"])
+                self.assertTrue(observed["required_prefixes_present"])
+        prose = agent_eval.observed_output(
+            "Use MUST(Functionality): only for proven defects.", expected
+        )
+        self.assertEqual(prose["prefixes"], [])
+
+    def test_reported_model_uses_metadata_not_review_prose(self) -> None:
+        self.assertEqual(
+            agent_eval.reported_model('{"type":"thread.started","model":"reported-model"}', ""),
+            {"model": "reported-model", "source": "event"},
+        )
+        self.assertEqual(
+            agent_eval.reported_model("", "OpenAI Codex\nmodel: reported-model\n"),
+            {"model": "reported-model", "source": "stderr"},
+        )
+        self.assertEqual(
+            agent_eval.reported_model(
+                '{"type":"item.completed","model":"mentioned-model"}\n[]\nnot-json',
+                "The reviewer mentions model: mentioned-model",
+            ),
+            {"model": None, "source": "unavailable"},
+        )
+
+    def test_package_metadata_tracks_reference_content_and_not_location(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "package"
+            package.mkdir()
+            (package / "SKILL.md").write_text(
+                "<!-- skill-version: v0.1.0-beta.2 -->\n"
+                + "<!-- source-sha256: " + "a" * 64 + " -->\n",
+                encoding="utf-8",
+            )
+            reference = package / "references" / "criteria.md"
+            reference.parent.mkdir()
+            reference.write_text("original criteria", encoding="utf-8")
+            original = agent_eval.package_metadata(package)
+            self.assertEqual(original["version"], "v0.1.0-beta.2")
+            self.assertEqual(original["source_sha256"], "a" * 64)
+            reference.write_text("changed criteria", encoding="utf-8")
+            changed = agent_eval.package_metadata(package)
+            self.assertNotEqual(original["package_sha256"], changed["package_sha256"])
+            moved = Path(directory) / "moved"
+            package.rename(moved)
+            self.assertEqual(changed, agent_eval.package_metadata(moved))
+
+    def test_evaluation_captures_copied_skill_and_neutral_repository(self) -> None:
+        original_command = agent_eval.run_command
+
+        def fake_agent(args, cwd, **kwargs):
+            if args[:2] == ["codex", "exec"]:
+                self.assertTrue(cwd.parent.name.startswith("repo-"))
+                self.assertNotIn("negative-refactor", str(cwd))
+                self.assertEqual(args[-1], "Review the working tree changes.")
+                answer = Path(args[args.index("--output-last-message") + 1])
+                answer.write_text("No actionable findings. Behavior is preserved.", encoding="utf-8")
+                return subprocess.CompletedProcess(args, 0, '{"type":"thread.started"}\n', "")
+            return original_command(args, cwd, **kwargs)
+
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            agent_eval, "run_command", side_effect=fake_agent
+        ):
+            case = json.loads((agent_eval.CASES / "negative-refactor/case.json").read_text())
+            result = agent_eval.evaluate_one(
+                agent_eval.CASES / "negative-refactor", case,
+                "Review the working tree changes.", "en", 1, Path(directory),
+                "requested-model", 30,
+            )
+            self.assertEqual(result["skill"], agent_eval.package_metadata(agent_eval.SKILL))
+            self.assertEqual(result["requested_model"], "requested-model")
+            self.assertIsNone(result["observed_model"])
+            self.assertEqual(result["invocation_mode"], "implicit")
+            self.assertTrue(result["observed"]["negative_output_check"])
+
+    def test_summary_records_reported_default_and_rejects_missing_answer(self) -> None:
+        for status, expected_exit in (("completed", 0), ("no_answer", 1)):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as directory:
+                destination = Path(directory) / "results"
+                result = {"status": status, "exit_code": 0, "observed_model": "reported-model"}
+                with patch.object(agent_eval, "evaluate_one", return_value=result), \
+                     patch.object(agent_eval.shutil, "which", return_value="codex"), \
+                     patch.object(agent_eval, "worktree_dirty", return_value=False), \
+                     patch.object(agent_eval, "run_command", return_value=subprocess.CompletedProcess([], 0, "test", "")), \
+                     redirect_stdout(StringIO()):
+                    self.assertEqual(agent_eval.main([
+                        "--case", "negative-refactor", "--execute", "--output-dir", str(destination),
+                    ]), expected_exit)
+                report = json.loads((destination / "summary.json").read_text())
+                self.assertEqual(report["schema_version"], 2)
+                self.assertEqual(report["model"], "reported-model")
+                self.assertEqual(report["model_source"], "cli_reported")
+                self.assertIsNone(report["requested_model"])
+                self.assertEqual(report["observed_models"], ["reported-model"])
+                self.assertFalse(report["evaluation_inputs_dirty"])
+
+    def test_worktree_state_does_not_treat_git_failure_as_clean(self) -> None:
+        with patch.object(agent_eval, "run_command", return_value=subprocess.CompletedProcess([], 1, "", "failure")):
+            self.assertIsNone(agent_eval.worktree_dirty())
 
     def test_event_usage_uses_completed_turn(self) -> None:
         events = '\n'.join([
@@ -69,6 +215,18 @@ class AgentEvaluationTests(unittest.TestCase):
             '"exit_code":0,"aggregated_output":"name: evidence-code-review"}}',
         ])
         self.assertTrue(agent_eval.skill_file_read_observed(events))
+
+    def test_skill_read_accepts_complete_content_before_later_command_failure(self) -> None:
+        skill_text = "---\nname: evidence-code-review\n---\n# Complete workflow\n"
+        event = {"type": "item.completed", "item": {
+            "type": "command_execution",
+            "command": "cat .agents/skills/evidence-code-review/SKILL.md && rg --files -g AGENTS.md",
+            "exit_code": 1,
+            "aggregated_output": skill_text,
+        }}
+        self.assertTrue(agent_eval.skill_file_read_observed(json.dumps(event), skill_text))
+        event["item"]["aggregated_output"] = "name: evidence-code-review"
+        self.assertFalse(agent_eval.skill_file_read_observed(json.dumps(event), skill_text))
 
     def test_auto_language_selects_available_request(self) -> None:
         selected = agent_eval.selected_cases(["must-stale-documentation"], False, "auto")

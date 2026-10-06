@@ -76,7 +76,9 @@ The default language is English when a case has an English request, otherwise
 Japanese. Use `--language en` or `--language ja` for an explicit language.
 Add `--execute` to make the model calls. Each run uses a new temporary Git
 repository containing the fixture baseline and the generated Codex Skill under
-`.agents/skills/`. The patch remains an uncommitted, visible working-tree diff.
+`.agents/skills/`. The workspace uses a neutral random `repo-` name and a
+`Developer` baseline author; case IDs stay in the local result directory.
+The patch remains an uncommitted, visible working-tree diff.
 Codex runs in read-only, non-interactive, ephemeral mode. The runner does not
 use the dangerous sandbox-bypass option. You can set `--model` and `--timeout`;
 otherwise it uses the local CLI default model and a ten-minute timeout per run.
@@ -86,11 +88,31 @@ prints its location. It saves `events.jsonl`, `answer.txt`, and `stderr.txt` for
 each run, plus `summary.json`. Do not commit these raw files. Remove the local
 directory when it is no longer needed, and check its contents before sharing.
 
-The summary records the agent version, requested model or `unavailable`, Skill
-revision, settings, selected cases, run count, available token usage, and
-provisional prefix/no-finding checks, and whether a successful Skill-file read
-appeared in CLI events. It omits raw review text. A file read alone does not
-prove that the Skill influenced the review. The runner does **not** confirm
+Schema 2 summaries separate the requested model from any model reported in CLI
+startup events or the stderr model header. If the CLI supplies no model
+metadata, `observed_model` remains null; an explicitly requested model is not
+claimed as observed. Summaries also record the repository revision, whole-tree
+dirty state, relevant evaluation-input dirty state, and the installed Skill's
+version, generated source hash, and actual package hash. Each run hashes the
+package copied into that run's repository, including its references. Unrelated
+untracked files may set `worktree_dirty` without setting
+`evaluation_inputs_dirty`; the latter covers `src`, `dist`, `tests/cases`, and
+the runner. A revision alone does not identify uncommitted inputs.
+
+The checks accept Markdown headings, numbered lists, emphasis, and inline-code
+titles. For negative cases, `negative_output_check` only means a nonempty answer
+contains no recognized finding prefix. `explicit_no_findings` separately
+records a no-finding statement. An unprefixed defect claim can therefore pass
+the syntax check; it still needs human adjudication. Empty output is not a pass
+and causes a nonzero runner exit. Old summaries and evaluations are not
+rewritten by these changes.
+
+Settings, selected cases, run count, available token usage, and Skill-read
+evidence are recorded as well. A completed command can establish a read even
+when a later command in the same shell fails, if its output contains the entire
+installed Skill text. Partial output from a failed command is insufficient.
+Raw review text is omitted from the summary. A file read alone does not prove
+that the Skill influenced the review. The runner does **not** confirm
 Skill invocation, score semantic matches, classify unexpected findings,
 calculate finding-level metrics, or establish an accuracy rate. Review
 the raw events and answer against `case.json`, record invocation separately,
@@ -131,6 +153,48 @@ whether the output matched fixture expectations. An unassisted output match is
 not a passing result for the Skill's review behavior.
 Evaluate at least one negative case with both English and Japanese requests
 in each agent; do not infer cross-language behavior from the fixture schema.
+
+### Claude Code protocol
+
+Use the generated Claude package from the same revision at
+`.claude/skills/evidence-code-review/` in a fresh neutral workspace. Use a
+neutral baseline author as in the Codex runner. The primary invocation mode is
+`implicit`: submit only the request from `case.json`. For an implicit run with
+no observed Skill invocation, optionally rerun explicitly with
+`/evidence-code-review <request>` as a diagnostic. Record the mode and never
+combine implicit and explicit runs into one score.
+
+Record invocation evidence separately from output matches:
+
+| Agent/mode | Evidence | Recorded value |
+| --- | --- | --- |
+| Claude, implicit | `Skill` tool call with `input.skill == "evidence-code-review"` | `confirmed`; otherwise `not_observed` |
+| Claude, explicit | Explicit command plus Skill present in the init event's `skills` list | `by_construction`, not a directly observed invocation |
+| Codex | Skill-file read in CLI events | `file_read_observed`; invocation remains `not_verified` |
+
+Reads of `references/` support the record but do not independently establish
+invocation. A Claude `not_observed` output match is not counted as a Skill pass.
+
+The Claude CLI `2.1.281` evaluation used a non-interactive static-review
+allowlist, as reported in [PR #44](https://github.com/akkie76/code-review-skills/pull/44#issuecomment-5996575210):
+
+```sh
+claude -p "<request from case.json>" \
+  --setting-sources project --strict-mcp-config --no-session-persistence \
+  --allowedTools "Read" "Grep" "Glob" "Skill" \
+    "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)" \
+  --disallowedTools "Edit" "Write" "NotebookEdit" "WebFetch" "WebSearch" \
+  --output-format stream-json --verbose
+```
+
+Select and record a model supported by the installed CLI and account. Record
+the fixed permissions, denied verification attempts, and observed CLI metadata.
+This Claude protocol does not allow fixture-code execution. Codex's read-only
+sandbox restricts writes but can permit execution, including focused Python
+checks; the two permission settings are not equivalent. Record this difference
+when comparing results. `--setting-sources project` does not prove that
+user-level Skills or memory were excluded; record that limitation or use a
+separately isolated environment if the comparison requires it.
 
 The public repository may contain dated, sanitized evaluation summaries.
 Keep raw model transcripts outside the repository. Never commit machine paths,

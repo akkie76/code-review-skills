@@ -10,6 +10,8 @@
 
 1. 評価ランナーのレビューを完了し、Skillのcommit、Codex CLIの版、明示的に選んだ
    モデルを記録します。比較する実行ではSkillのrevision、モデル、設定を揃えます。
+   未コミット状態とコピーしたSkillの実際のpackage hashも記録します。評価入力に
+   ローカル変更がある場合、commitだけでは入力を識別できません。
 2. 初回は各caseを1回ずつ実行します。ばらつきの確認が必要なcaseだけ、初回評価後に
    再実行します。各batchは最大2件です。順に実行し、batchごとにアカウントの残り
    利用枠を確認します。
@@ -31,6 +33,10 @@ make eval EVAL_ARGS="--case negative-go-format --case negative-optional-label --
 該当する`case.json`を確認してから次へ進みます。Skillの起動確認と、回答がfixtureの
 期待値を満たしたかは分けて記録します。ファイルの読み取りやprefixの一致だけで
 合格とはしません。
+
+もう一方のエージェントは[Claude Codeの評価手順](README.ja.md)に従い、自動選択を基本に、
+明示呼び出しの切り分けを別に記録します。中立な作業場所、固定権限、起動の根拠も記録します。
+Codexのread-onlyとClaudeの静的レビュー用許可一覧は異なる設定です。
 
 ## 4グループ・各4batch
 

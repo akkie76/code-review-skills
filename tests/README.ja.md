@@ -67,7 +67,9 @@ make eval EVAL_ARGS="--case negative-refactor --language ja --runs 2"
 言語指定を省略すると、英語依頼があるcaseでは英語、ないcaseでは日本語を選びます。
 実際にモデルを呼び出す場合のみ`--execute`を追加します。実行ごとに一時Gitリポジトリを
 新規作成し、fixtureの元ファイルと生成済みCodex Skillを`.agents/skills/`へ配置します。
-patchは未コミットの可視diffとして適用します。Codexは読み取り専用・非対話・一時sessionで
+作業場所は中立なランダム名`repo-`、基準commitの作者は`Developer`とし、case IDは
+ローカルの結果ディレクトリにのみ使います。patchは未コミットの可視diffとして適用します。
+Codexは読み取り専用・非対話・一時sessionで
 動作し、sandboxを無効にするオプションは使用しません。`--model`と`--timeout`は任意で、
 省略時はローカルCLIの既定モデルと1実行あたり10分の制限を使用します。
 
@@ -76,10 +78,25 @@ patchは未コミットの可視diffとして適用します。Codexは読み取
 各実行の`events.jsonl`、`answer.txt`、`stderr.txt`と、集計用の`summary.json`を保存します。
 生の記録はコミットせず、共有前に内容を確認し、不要になったらローカルから削除してください。
 
-集計にはCLIの版、指定モデル（不明なら`unavailable`）、Skillのrevision、設定、case、
-実行回数、取得できたトークン使用量、暫定的なprefix・「指摘なし」の検査と、CLI記録上で
-Skillファイルの読み取りが成功したかを記録します。ファイルの読み取りだけでは、Skillが
-レビューへ影響した証拠にはなりません。レビュー本文は集計に含めません。
+schema 2の集計は、指定モデルと、CLIの開始イベントまたはstderrのmodel headerで
+報告されたモデルを分けて記録します。CLIが情報を出さない場合は`observed_model`を
+nullとし、指定しただけのモデルを観測済みとしません。repositoryのrevision、全体の
+未コミット状態、評価入力に関係する未コミット状態、Skillの版・生成元hash・実際の
+package hashも記録します。各実行では、参照ファイルを含むコピー後のpackageをhash化します。
+無関係な未追跡ファイルで`worktree_dirty`だけがtrueになる場合があります。
+`evaluation_inputs_dirty`の対象は`src`・`dist`・`tests/cases`とrunnerです。
+revisionだけでは未コミットの入力を識別できません。
+
+形式チェックはMarkdown見出し、番号付きリスト、強調、inline codeのタイトルに対応します。
+負例の`negative_output_check`は「回答が空でなく、認識した指摘prefixがない」ことだけを示します。
+「指摘なし」の文言は`explicit_no_findings`へ別に記録します。prefixのない不具合の主張も
+形式チェックを通るため、人の判定が必要です。空の回答は合格にせず、runnerを非zeroで終了します。
+これらの変更で過去の集計や評価結果は書き換えません。
+
+設定、case、実行回数、取得可能なtoken利用量、Skill読み取りの根拠も記録します。
+同じshell内の後続コマンドが失敗しても、出力にインストール済みSkillの全文があれば
+読み取りを確認できます。失敗したコマンドの部分出力だけでは確認しません。
+ファイルの読み取りだけではSkillがレビューへ影響した証拠にはならず、レビュー本文は集計に含めません。
 Skillの起動確認、指摘の意味的な一致、想定外の指摘の分類、指摘単位の指標、
 一般的な精度の算出は**行いません**。生の記録と`case.json`を
 人が照合し、起動の有無を別に記録し、想定外の主張を有効・曖昧・重複・根拠不足に
@@ -111,6 +128,45 @@ CodexとClaude Codeの両方で、caseごとに次を実施します。
 分けて記録します。Skill未起動での一致は、Skillのレビュー挙動の合格と数えません。
 少なくとも1つの負例を、各エージェントで英語と日本語の両方の依頼文により評価します。
 fixtureの形式だけから言語間の挙動を推測しないでください。
+
+### Claude Codeの評価手順
+
+同じrevisionのClaude向けpackageを、新規の中立な作業場所の
+`.claude/skills/evidence-code-review/`へ配置し、基準commitの作者も中立なものにします。
+基本は`implicit`（自動選択）として`case.json`の依頼文だけを送信します。
+Skill起動を観測できなかった回だけ、必要に応じて`/evidence-code-review <依頼文>`で
+`explicit`（明示呼び出し）の切り分け評価を行います。方式を記録し、両方式を合算しません。
+
+出力の期待値一致とは別に、起動の根拠を記録します。
+
+| エージェント・方式 | 根拠 | 記録する値 |
+| --- | --- | --- |
+| Claude・implicit | `input.skill == "evidence-code-review"`の`Skill` tool呼び出し | `confirmed`。なければ`not_observed` |
+| Claude・explicit | 明示コマンドに加え、initイベントの`skills`一覧に存在 | `by_construction`。起動を直接観測したものではない |
+| Codex | CLI記録上のSkillファイル読み取り | `file_read_observed`。起動は`not_verified`のまま |
+
+`references/`の読み取りは補助情報であり、単独で起動の証拠にはしません。
+Claudeの`not_observed`で期待出力と一致しても、Skillの合格には数えません。
+
+Claude CLI `2.1.281`の評価では、[PR #44の報告](https://github.com/akkie76/code-review-skills/pull/44#issuecomment-5996575210)
+にある、次の非対話・静的レビュー用の固定許可一覧を使いました。
+
+```sh
+claude -p "<case.jsonの依頼文>" \
+  --setting-sources project --strict-mcp-config --no-session-persistence \
+  --allowedTools "Read" "Grep" "Glob" "Skill" \
+    "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)" \
+  --disallowedTools "Edit" "Write" "NotebookEdit" "WebFetch" "WebSearch" \
+  --output-format stream-json --verbose
+```
+
+インストールしたCLIとアカウントで利用可能なモデルを選び、記録してください。
+固定した権限、拒否された検証の試行、CLIが報告した情報も記録します。このClaude手順は
+fixtureのコード実行を許可しません。Codexのread-onlyは書き込みを制限しますが、
+絞ったPython検証などの実行を許可する場合があり、同じ権限条件ではありません。
+結果比較時はこの違いを明記します。`--setting-sources project`だけではユーザー単位の
+Skillやmemoryを除外した証明になりません。その制約を記録し、比較条件に必要なら
+別途隔離した環境を使用してください。
 
 日付入りで機密情報を除いた評価サマリーは公開リポジトリへ記録できます。
 生のmodel transcriptはリポジトリ外で管理し、端末固有のパス、非公開リポジトリの

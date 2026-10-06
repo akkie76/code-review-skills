@@ -12,6 +12,8 @@ the four groups or all 28 fixtures in parallel.
 1. Finish review of the evaluation runner and record the exact Skill commit,
    Codex CLI version, and an explicitly chosen model. Use the same Skill
    revision, model, and settings for comparable runs.
+   Record dirty-state flags and the actual installed Skill package hash; a
+   commit alone is insufficient when evaluation inputs have local changes.
 2. Start with one run per case. Re-run only cases selected for variation checks
    after the first pass. Each batch contains at most two cases; run batches
    sequentially and check the remaining account allowance after each batch.
@@ -36,6 +38,11 @@ execution. Review its `summary.json`, each `answer.txt`, and the relevant
 `case.json` before continuing. Record whether the Skill was invoked separately
 from whether the answer met the fixture expectations. A successful file read or
 prefix match alone is not a pass.
+
+Use the [Claude Code protocol](README.md#claude-code-protocol) for the other
+agent: implicit invocation first, explicit diagnostics separately, neutral
+workspace names, fixed permissions, and separate invocation evidence. Codex
+read-only execution and Claude's static-only allowlist are different settings.
 
 ## Four groups, four small batches each
 
