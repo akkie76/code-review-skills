@@ -84,7 +84,10 @@ use the dangerous sandbox-bypass option. You can set `--model` and `--timeout`;
 otherwise it uses the local CLI default model and a ten-minute timeout per run.
 The default output is a newly created, private local directory outside this
 repository; use `--output-dir` to choose a new directory elsewhere. The runner
-prints its location. It saves `events.jsonl`, `answer.txt`, and `stderr.txt` for
+rejects both explicit paths and a default temporary location (`TMPDIR`) that
+resolve inside this repository, including symlinks, before creating output.
+Choose an outside-repository `--output-dir` if your temporary location is rejected.
+The runner prints its location. It saves `events.jsonl`, `answer.txt`, and `stderr.txt` for
 each run, plus `summary.json`. Do not commit these raw files. Remove the local
 directory when it is no longer needed, and check its contents before sharing.
 
@@ -102,7 +105,9 @@ the runner. A revision alone does not identify uncommitted inputs.
 The checks accept Markdown headings, numbered lists, emphasis, and inline-code
 titles. For negative cases, `negative_output_check` only means a nonempty answer
 contains no recognized finding prefix. `explicit_no_findings` separately
-records a no-finding statement. An unprefixed defect claim can therefore pass
+records a best-effort phrase match for informational use only: it can miss
+no-finding statements or match partial statements alongside real findings.
+It is never a pass/fail signal. An unprefixed defect claim can therefore pass
 the syntax check; it still needs human adjudication. Empty output is not a pass
 and causes a nonzero runner exit. Old summaries and evaluations are not
 rewritten by these changes.
@@ -153,6 +158,14 @@ whether the output matched fixture expectations. An unassisted output match is
 not a passing result for the Skill's review behavior.
 Evaluate at least one negative case with both English and Japanese requests
 in each agent; do not infer cross-language behavior from the fixture schema.
+
+When using a blind grader, record the supplied files and any exclusions or
+redactions (for example, removing `.claude/` or replacing agent names). Tell
+the grader explicitly that the reviewer could see those excluded files.
+A repository-scope claim that cannot be verified from the reduced grading
+input is indeterminate, not automatically a false positive. Reconcile it
+against a sanitized file manifest or relevant trace before adjudication;
+do not treat absent grading evidence as proof that a claim was invented.
 
 ### Claude Code protocol
 
@@ -218,6 +231,15 @@ decision accepts the documented deviations.
 The [2026-10-06 Codex remaining-batch evaluation](results/2026-10-06-codex-remaining.md)
 records 19 remaining cases at one revision (16/19 strict matches), plus a
 successful targeted test-gap rerun after clarifying verification-risk findings.
+The [2026-10-06 Claude Code report](https://github.com/akkie76/code-review-skills/pull/44#issuecomment-6007929541)
+records 29 runs at `5fb7864`, after the Skill and fixture changes: 26/29 strict
+matches and 29/29 confirmed Skill invocations. All required content was reported
+(negative cases have no required findings); three prefix disagreements remain.
+This is a maintainer-reported sample, not an independent verification or a
+same-input repeat of the earlier revision. Its unchanged score does not establish
+an accuracy improvement or regression. A claim initially flagged as unsupported
+was adjudicated as a grading artifact because installed Skill files were excluded
+from the grader's input.
 It also preserves classification differences and the unvalidated delegation
 boundary; it is not a full 28-case run at the final revision.
 

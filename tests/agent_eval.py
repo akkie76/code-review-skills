@@ -252,12 +252,24 @@ def evaluate_one(
 
 
 def output_directory(requested: Path | None) -> Path:
-    if requested is None:
-        return Path(tempfile.mkdtemp(prefix="evidence-review-eval-"))
-    resolved = requested.expanduser().resolve()
     repository = ROOT.resolve()
-    if resolved == repository or repository in resolved.parents:
-        raise ValueError("evaluation output must be outside this repository")
+
+    def outside_repository(path: Path) -> Path:
+        resolved = path.expanduser().resolve()
+        if resolved == repository or repository in resolved.parents:
+            raise ValueError("evaluation output must be outside this repository")
+        return resolved
+
+    if requested is None:
+        # TMPDIR may be inside the checkout, including through a symlink.
+        temporary_root = outside_repository(Path(tempfile.gettempdir()))
+        created = Path(tempfile.mkdtemp(prefix="evidence-review-eval-", dir=temporary_root))
+        try:
+            return outside_repository(created)
+        except ValueError:
+            created.rmdir()  # Only the newly created, still-empty directory.
+            raise
+    resolved = outside_repository(requested)
     resolved.mkdir(parents=True, exist_ok=False, mode=0o700)
     return resolved
 
@@ -320,7 +332,10 @@ def main(argv: list[str] | None = None) -> int:
         "selected_cases": [case["id"] for _, case, _, _ in cases],
         "requested_runs_per_case": args.runs,
         "results": [],
-        "notes": "Prefix and no-finding checks are provisional. Semantic findings, "
+        "notes": "Prefix and negative-output checks are syntax-only and provisional. "
+                 "explicit_no_findings is an informational, best-effort phrase match: "
+                 "it can miss no-finding statements or match partial statements alongside "
+                 "findings, and is never a pass/fail signal. Semantic findings, "
                  "unexpected output, and Skill invocation require human adjudication.",
     }
     try:

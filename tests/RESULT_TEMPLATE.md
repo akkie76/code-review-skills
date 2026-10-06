@@ -24,6 +24,8 @@
 - Prohibited behavior observed:
 - Additional comments:
 - Classification of unexpected output: valid / ambiguous / false positive
+- Grading inputs / excluded files / redactions:
+- Indeterminate claims due to grading exclusions / reconciliation evidence:
 - Follow-up:
 
 Keep output matches separate from invocation evidence and syntax checks. A

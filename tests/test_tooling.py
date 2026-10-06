@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -235,6 +236,52 @@ class AgentEvaluationTests(unittest.TestCase):
     def test_rejects_result_directory_inside_repository(self) -> None:
         with self.assertRaisesRegex(ValueError, "outside this repository"):
             agent_eval.output_directory(agent_eval.ROOT / "tests/results/local")
+
+    def test_default_output_rejects_tmpdir_inside_repository_before_creation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory) / "repository"
+            repository.mkdir()
+            nested = repository / "tmp"
+            nested.mkdir()
+            alias = Path(directory) / "tmp-alias"
+            alias.symlink_to(nested, target_is_directory=True)
+            for temporary_root in (repository, nested, alias):
+                with self.subTest(tmpdir=temporary_root), \
+                     patch.object(agent_eval, "ROOT", repository), \
+                     patch.dict(os.environ, {"TMPDIR": str(temporary_root)}), \
+                     patch.object(tempfile, "tempdir", None), \
+                     patch.object(tempfile, "mkdtemp", wraps=tempfile.mkdtemp) as create:
+                    with self.assertRaisesRegex(ValueError, "outside this repository"):
+                        agent_eval.output_directory(None)
+                    create.assert_not_called()
+            self.assertEqual(list(nested.iterdir()), [])
+
+    def test_default_output_creates_new_directories_outside_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary_root = Path(directory).resolve()
+            repository = temporary_root / "repository"
+            repository.mkdir()
+            with patch.object(agent_eval, "ROOT", repository), \
+                 patch.dict(os.environ, {"TMPDIR": str(temporary_root)}), \
+                 patch.object(tempfile, "tempdir", None):
+                first = agent_eval.output_directory(None)
+                second = agent_eval.output_directory(None)
+            self.assertNotEqual(first, second)
+            for destination in (first, second):
+                self.assertEqual(destination.parent, temporary_root)
+                self.assertTrue(destination.is_dir())
+                self.assertEqual(destination.stat().st_mode & 0o777, 0o700)
+
+    def test_explicit_output_rejects_symlink_into_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory) / "repository"
+            repository.mkdir()
+            alias = Path(directory) / "alias"
+            alias.symlink_to(repository, target_is_directory=True)
+            with patch.object(agent_eval, "ROOT", repository):
+                with self.assertRaisesRegex(ValueError, "outside this repository"):
+                    agent_eval.output_directory(alias / "results")
+            self.assertFalse((repository / "results").exists())
 
 
 class ReleaseCheckTests(unittest.TestCase):
