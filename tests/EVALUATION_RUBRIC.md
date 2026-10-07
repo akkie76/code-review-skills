@@ -63,6 +63,54 @@ supporting details listed under `must_not_report`. Record other factual supporti
 claims separately. Explain exclusions/redactions in blind-grading inputs and
 reconcile missing files with a sanitized manifest/trace before classifying a claim.
 
+### Whole-answer adjudication (policy v2)
+
+Classify what the answer asserts or asks the author to change, not headings,
+prefix presence, question marks, or the phrase "not a finding":
+
+- A clearly separate question about an unresolved material requirement, with a
+  verified premise and no defect allegation, is not a finding. Record it in
+  `notes`, not `findings`; its mere presence does not make a negative case fail.
+- An accurate, explicitly non-actionable note explaining that unchanged behavior
+  is outside scope is also not a finding. Read the baseline to verify it. A repair
+  request or attribution of that defect to the reviewed change is still a finding,
+  even if unprefixed or labeled a question. Avoid unrelated defect catalogues.
+- Inspect factual premises and supporting sentences everywhere in the answer.
+  A false or unsupported factual assertion goes in `supporting_claims` as
+  `unsupported`; a missing grading source needed to decide stays `ambiguous`.
+  Hedging does not make an invented function, filename, or behavior acceptable.
+  Genuine uncertainty about intent, with no unsupported factual premise, is not
+  itself an unsupported claim. Do not weaken this to "only proven false claims fail".
+- Match `must_not_report` semantically, including any qualification: "report this
+  defect as introduced" is not matched merely by an accurate exclusion note.
+  A genuine prohibited assertion fails even when phrased as a question.
+
+Each run now saves a private `grading-context.json` inventory, including file
+hashes and `.git/` plus the installed agent Skill directory in `excluded_paths`.
+Supply it alongside the answer, applied fixture, baseline and relevant trace to
+the grader. Import records its hash and seeds `grading_exclusions`; additional
+redactions must be explained. An exclusion identifies omitted infrastructure,
+not an assertion that it was absent from the review workspace. Presence alone
+does not prove behavior: inspect the source/trace before resolving a claim.
+The context remains private and is not exported by the aggregate.
+
+### Classification calibration
+
+Choose the expected action by contract and impact before executing:
+
+| Case | Principle | v2 expected prefix |
+| --- | --- | --- |
+| `must-stale-documentation` | Approved mandatory token change; setup instructions still recommend a startup path that now fails | `MUST(Document)` (unchanged) |
+| `nits-change-created-dead-code` | Small private helper becomes unused; verified no consumers or behavior impact; local removal, not optional restructuring | `NITS(Simplicity)` (unchanged) |
+| `should-layer-boundary` | Authoritative AGENTS.md says domain **must not** depend on UI; no approved exception | `MUST(Design)` (corrected from SHOULD) |
+
+The last case keeps its historical ID for traceability; the ID is not an action
+rule. Deferrable architecture advice can still be `SHOULD`. This correction does
+not relabel older results. The v2 policy, Skill changes and grading context require
+a new frozen campaign; do not re-score Run A/B with these rules or treat estimated
+improvements as measurements. All earlier invocation labels retain their original
+evidence strength.
+
 A strict case pass requires all required items, expected prefixes, the requested
 output type, a compliant output contract, no prohibited statement, and no
 unsupported finding or supporting claim. Prefix differences remain failures,
@@ -143,11 +191,18 @@ output or insufficient allowance; do not automatically substitute a successful
 retry. If a technical rerun is needed, retain the failed record and explicitly
 start a replacement campaign rather than cherry-picking.
 
+The proposal to sample every case twice is not enabled by v2: the predeclared
+29-primary + six-repeat plan remains in place. A broader comparison would require
+agreeing the cost and aggregation rule before execution, with all samples retained
+and no best-of-two selection. It must not silently turn diagnostic Run B into a
+second primary score or replace Run A's failures.
+
 On the authenticated Claude PC, check out the frozen commit and use the same
 runner with `--agent claude --model claude-opus-5-5`. Confirm model availability
 before freezing; do not substitute an alias or another model mid-campaign.
 Run with the fixture request only, not an explicit Skill command. Transfer the
 `summary.json` and referenced raw run directories privately to the scoring PC,
+including each `grading-context.json`,
 or use a copy of the same frozen campaign. Import locally after transfer so
 absolute answer paths are generated for that PC. The tool rejects mismatched
 revision, model, fixture/package hashes, dirty inputs, permissions and duplicate

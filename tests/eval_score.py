@@ -162,9 +162,22 @@ def import_summary(directory: Path, summary_file: Path, phase: str) -> None:
         if summary_file.parent not in answer_path.parents:
             raise ValueError("answer path escapes summary directory")
         answer = answer_path.read_bytes()
+        if result.get("grading_context_file") != "grading-context.json":
+            raise ValueError("grading context is required; retain legacy records separately")
+        context_path = (answer_path.parent / "grading-context.json").resolve()
+        if summary_file.parent not in context_path.parents:
+            raise ValueError("grading context escapes summary directory")
+        context_bytes = context_path.read_bytes()
+        context = json.loads(context_bytes)
+        if (not isinstance(context, dict) or context.get("schema_version") != 1 or context.get("agent") != agent
+                or context.get("skill") != manifest["skills"][agent]
+                or not isinstance(context.get("excluded_paths"), list)):
+            raise ValueError("grading context does not match execution")
         record = {
             "agent": agent, "phase": phase, "case_id": result["case_id"], "language": result["language"],
             "answer_path": str(answer_path), "answer_sha256": hashlib.sha256(answer).hexdigest(),
+            "grading_context": {"path": str(context_path),
+                                "sha256": hashlib.sha256(context_bytes).hexdigest()},
             "execution": {"status": result["status"], "exit_code": result.get("exit_code"),
                           "skill_evidence": result["skill_evidence"], "observed_model": observed,
                           "agent_version": summary["agent_version"], "settings": settings,
@@ -172,7 +185,7 @@ def import_summary(directory: Path, summary_file: Path, phase: str) -> None:
             "judgment": {"finalized": False, "reviewer": "", "method": "human",
                          "output_contract_satisfied": None, "no_findings": None,
                          "forbidden_matches": [], "findings": [], "supporting_claims": [],
-                         "grading_exclusions": [], "notes": ""},
+                         "grading_exclusions": context["excluded_paths"], "notes": ""},
         }
         identity = key(record)
         if identity in existing:
@@ -197,6 +210,10 @@ def assess(record: dict, expected: dict) -> dict:
     answer = answer_path.read_bytes()
     if hashlib.sha256(answer).hexdigest() != record["answer_sha256"]:
         raise ValueError("answer changed after import; invalidate its judgment")
+    context = record.get("grading_context")
+    if context is not None:
+        if hashlib.sha256(outside(Path(context["path"])).read_bytes()).hexdigest() != context["sha256"]:
+            raise ValueError("grading context changed after import; invalidate its judgment")
     execution = record["execution"]
     if execution["status"] != "completed" or execution.get("exit_code") != 0 or not answer.strip():
         return {"outcome": "incomplete", "reason": "execution_failed_or_empty"}

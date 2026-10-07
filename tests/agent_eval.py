@@ -356,6 +356,21 @@ def agent_command(agent: str, repo: Path, answer_file: Path, prompt: str,
     return command
 
 
+def grading_context(repo: Path, agent: str, skill: dict) -> dict:
+    """Private inventory for graders; path presence is not proof of behavior."""
+    roots = {".git": "generated Git metadata", ".agents": "installed Codex Skill",
+             ".claude": "installed Claude Skill"}
+    excluded = [{"path": name + "/", "reason": reason}
+                for name, reason in roots.items() if (repo / name).exists()]
+    files = [{"path": path.relative_to(repo).as_posix(),
+              "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+             for path in sorted(repo.rglob("*")) if path.is_file()]
+    return {"schema_version": 1, "agent": agent, "skill": skill,
+            "excluded_paths": excluded, "files": files,
+            "notes": "Inventory before review. Excluded infrastructure is present, not part of the product diff. "
+                     "Inspect its content or the raw trace to verify behavior; do not infer facts from presence."}
+
+
 def evaluate_one(
     case_dir: Path, case: dict, prompt: str, language: str, run_number: int,
     output_dir: Path, model: str | None, timeout: int, agent: str = "codex",
@@ -371,6 +386,10 @@ def evaluate_one(
         )
         skill = package_metadata(installed_skill)
         skill_text = (installed_skill / "SKILL.md").read_text(encoding="utf-8")
+        (run_dir / "grading-context.json").write_text(
+            json.dumps(grading_context(repo, agent, skill), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
         answer_file = run_dir / "answer.txt"
         command = agent_command(agent, repo, answer_file, prompt, model)
         try:
@@ -416,6 +435,7 @@ def evaluate_one(
             "skill_invocation": "confirmed" if evidence == "confirmed" else "not_verified",
             "observed": observed_output(answer, case["expectations"]),
             "raw_directory": run_dir.name,
+            "grading_context_file": "grading-context.json",
         }
 
 

@@ -13,7 +13,7 @@ Do not modify the reviewed code unless the user separately asks for changes.
 
 <!-- skill-version: v0.1.0-beta.2 -->
 
-<!-- source-sha256: 97e88de00a6769ad9d626c875ef268ca71ecdd3e15731475c4d47baee1e6578f -->
+<!-- source-sha256: 104fe8438c7e44011ebd3f748c701550eccdbec8d36665089a604becf4e8f719 -->
 
 # Review Workflow
 
@@ -157,16 +157,20 @@ nearby pattern, unchanged behavior, caller count, contract, or specific
 location as supporting evidence, read that exact source and confirm that it
 states or implements what the finding attributes to it. Do not infer a cited
 fact from a similar pattern elsewhere. Remove unverified supporting detail even
-when the core conclusion remains correct.
+when the core conclusion remains correct. Apply this check to the whole response,
+including open questions, summaries, and hedged supporting sentences. Verify
+named functions, files, and behavior before mentioning them; a question mark or
+"might" does not excuse an invented factual premise.
 
 Investigate uncertain claims. When a candidate's trigger can be checked safely,
 within the requested scope, and with available trusted tools, prefer the
 smallest focused test or static check that exercises the suspected risky input
 or path rather than only a convenient safe variant. Do not execute untrusted
 project code or commands without authorization, and avoid checks whose side
-effects cannot be isolated. If a claim remains speculative, omit it or
-explicitly present it as a question outside the formal findings. Do not use a
-lower action level as a substitute for validation; assign the level after the
+effects cannot be isolated. Omit unverifiable speculation. Ask a question outside
+the formal findings only when a material contract or intent is unresolved,
+grounding its premise in inspected evidence without implying an unproven defect.
+Do not use a lower action level as a substitute for validation; assign the level after the
 problem is established, based on its demonstrated impact.
 
 ## 6. Control false positives
@@ -184,6 +188,12 @@ Do not report:
   guarantees.
 - Multiple comments for the same root cause when one precise finding is
   sufficient.
+
+An accurate, explicitly non-actionable scope note is not a finding. Mention an
+unchanged defect only when necessary to explain the reviewed scope or a material
+verification limit; do not ask for its repair, attribute it to this change, or
+add a catalogue of unrelated defects. Verify the baseline before calling it
+pre-existing.
 
 ## 7. Produce the review
 

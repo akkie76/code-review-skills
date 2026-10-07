@@ -24,6 +24,9 @@ author what response is expected; it is not reviewer confidence or fix effort.
 Use `MUST` when the change has a demonstrated defect, security failure,
 contract violation, data-integrity risk, or other problem that must be resolved
 before merge. State the failing behavior and why merge should be blocked.
+A new violation of an authoritative non-negotiable repository rule remains
+`MUST` even without a runtime failure. Incorrect setup instructions that make
+the documented installation or startup fail are also `MUST(Document)`.
 
 Do not use `MUST` for personal preferences, uncertain concerns, or an optional
 design alternative. Ask a question when missing context prevents proving the
@@ -35,7 +38,8 @@ Use `SHOULD` when a concrete quality, maintainability, verification, or
 operational risk should normally be resolved, but the team can consciously
 defer it without making the current change incorrect. Explain the cost of
 deferral. When deferring, recommend recording the follow-up rather than leaving
-the outcome implicit.
+the outcome implicit. An architectural recommendation that is explicitly deferrable
+can be `SHOULD(Design)`; do not silently reinterpret a mandatory rule as advice.
 
 ### BETTER
 
@@ -54,7 +58,10 @@ or presentation impact, and do not make it sound like a merge blocker. If the
 typo changes an API or behavior, classify the actual impact instead. Use NITS
 sparingly: do not report valid but unfamiliar names, personal naming or wording
 preferences, pre-existing typos, or formatter output, and do not manufacture
-trivial comments to make the review appear complete.
+trivial comments to make the review appear complete. Removing a small private
+helper made unused by the change is a `NITS(Simplicity)` correction when search
+confirms no consumers and there is no behavioral impact; broader restructuring
+with an optional benefit belongs under `BETTER` instead.
 
 ## Select the review viewpoint
 
@@ -114,7 +121,9 @@ code, configuration, documentation, test output, or verified tool behavior.
 This requirement applies to optional supporting details as well as the core
 defect claim. Cite a precedent, pattern, unchanged path, or specific location
 only after reading it directly; otherwise omit it. A correct conclusion does
-not make fabricated or inferred supporting evidence acceptable.
+not make fabricated or inferred supporting evidence acceptable. Apply the same
+factual checks to questions and summaries. Uncertainty may concern a material
+requirement or intent, not an invented function, file, caller, or behavior.
 
 ## Communicate constructively
 
@@ -150,7 +159,9 @@ Use this order:
    broad outage, normal-path functional failure, limited edge-case failure,
    then maintainability or verification risk. Use file location only to break
    ties of similar impact.
-2. Open questions that materially affect the review, if any.
+2. Open questions about unresolved contracts or intent that materially affect
+   the review, if any. Keep them distinct from findings and ground their premises
+   in verified facts; do not disguise a defect allegation as a question.
 3. A short summary and verification gaps, when useful.
 
 Do not add a table when inline comments or the review platform's native
@@ -159,6 +170,10 @@ annotation format is clearer.
 When no actionable comment exists, state that explicitly. Do not invent a
 `BETTER` or `NITS` comment. Mention tests not run or areas not verified only
 when the omission materially limits confidence.
+
+An accurate, explicitly non-actionable note explaining why unchanged behavior
+is outside scope is not a finding. Do not request repairs of an untouched defect
+or imply that the reviewed change introduced it. Omit unrelated notes.
 
 For a `MUST` comment with security, privacy, data-integrity, financial, or
 broad availability impact, name that impact explicitly in the title or first

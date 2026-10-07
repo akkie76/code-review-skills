@@ -94,7 +94,9 @@ rejects both explicit paths and a default temporary location (`TMPDIR`) that
 resolve inside this repository, including symlinks, before creating output.
 Choose an outside-repository `--output-dir` if your temporary location is rejected.
 The runner prints its location. It saves `events.jsonl`, `answer.txt`, and `stderr.txt` for
-each run, plus `summary.json`. Do not commit these raw files. Remove the local
+each run, plus `grading-context.json` (private file inventory and grading exclusions)
+and `summary.json`. Transfer the complete run directories, including the grading
+context, to graders/scoring hosts. Do not commit these raw files. Remove the local
 directory when it is no longer needed, and check its contents before sharing.
 
 Schema 2 summaries separate the requested model from any model reported in CLI
@@ -141,6 +143,12 @@ imports raw runner summaries into unreviewed local annotations, and aggregates
 human-finalized judgments. `make eval` also accepts `--agent claude` for the
 documented static-only protocol. Both commands are offline unless the runner
 is explicitly given `--execute`; scoring never calls a model.
+
+The v2 rubric distinguishes grounded open questions and accurate non-actionable
+scope notes from findings, but checks factual premises throughout the answer.
+Hedging does not excuse unsupported evidence. It corrects the mandatory-layer-rule
+fixture to `MUST(Design)` and retains setup `MUST` / small dead-helper `NITS`.
+These changes apply only to new frozen campaigns, not historical score revisions.
 
 Run each case separately with both Codex and Claude Code:
 

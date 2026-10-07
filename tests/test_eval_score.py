@@ -222,12 +222,42 @@ class EvaluationScoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "answer changed"):
             eval_score.assess(record, EXPECTED)
 
+    def test_adjudicated_scope_note_and_question_are_not_findings(self) -> None:
+        expected = {"must_report": [], "must_not_report": ["Attribute an unchanged defect to this rename."],
+                    "prefixes": [], "output": "no_findings"}
+        record = self.record()
+        answer = b"No actionable findings. The unchanged empty-input behavior is outside this rename's scope.\n"
+        Path(record["answer_path"]).write_bytes(answer)
+        record["answer_sha256"] = hashlib.sha256(answer).hexdigest()
+        record["judgment"].update({"findings": [], "no_findings": True,
+                                  "notes": "Baseline confirms scope note; question about intent has no defect assertion.",
+                                  "supporting_claims": [{"kind": "valid", "evidence_note": "Verified baseline behavior."}]})
+        result = eval_score.assess(record, expected)
+        self.assertEqual(result["outcome"], "pass")
+        self.assertEqual(result["unsupported_findings"], 0)
+        record["judgment"]["supporting_claims"][0]["kind"] = "unsupported"
+        self.assertEqual(eval_score.assess(record, expected)["outcome"], "fail")
+        record["judgment"]["supporting_claims"][0]["kind"] = "ambiguous"
+        self.assertEqual(eval_score.assess(record, expected)["outcome"], "pending")
+
+    def test_prohibited_question_premise_still_fails_without_formal_finding(self) -> None:
+        record = self.record()
+        record["judgment"]["notes"] = "Unprefixed question still asserts the prohibited defect."
+        record["judgment"]["forbidden_matches"] = [0]
+        self.assertEqual(eval_score.assess(record, EXPECTED)["outcome"], "fail")
+
     def summary(self) -> tuple[Path, dict]:
         raw_directory = self.directory / "raw"
         raw_directory.mkdir()
         run_dir = raw_directory / "case-0-en-1"
         run_dir.mkdir()
         (run_dir / "answer.txt").write_text("MUST(Functionality): A proven defect.", encoding="utf-8")
+        eval_score.write_json(run_dir / "grading-context.json", {
+            "schema_version": 1, "agent": "codex", "skill": SKILL,
+            "excluded_paths": [{"path": ".git/", "reason": "generated Git metadata"},
+                               {"path": ".agents/", "reason": "installed Codex Skill"}],
+            "files": [],
+        })
         summary = {
             "schema_version": 2, "agent": "codex", "agent_version": "codex-test",
             "evaluation_inputs_dirty": False, "skill_revision": self.manifest["source_revision"],
@@ -238,7 +268,7 @@ class EvaluationScoreTests(unittest.TestCase):
             "results": [{"case_id": "case-0", "language": "en", "run_number": 1,
                          "requested_model": "codex-model", "observed_model": None, "skill": SKILL,
                          "status": "completed", "exit_code": 0, "skill_evidence": "file_read_observed",
-                         "raw_directory": run_dir.name}],
+                         "raw_directory": run_dir.name, "grading_context_file": "grading-context.json"}],
         }
         return raw_directory / "summary.json", summary
 
@@ -248,7 +278,11 @@ class EvaluationScoreTests(unittest.TestCase):
         eval_score.import_summary(self.directory, path, "primary")
         _, judgments = eval_score.load_campaign(self.directory)
         self.assertFalse(judgments["runs"][0]["judgment"]["finalized"])
-        self.assertEqual(eval_score.aggregate(self.directory)["results"][0]["outcome"], "pending")
+        self.assertEqual(len(judgments["runs"][0]["judgment"]["grading_exclusions"]), 2)
+        aggregate = eval_score.aggregate(self.directory)
+        self.assertEqual(aggregate["results"][0]["outcome"], "pending")
+        for private in (str(self.directory), "grading_context", "grading_exclusions", ".git/"):
+            self.assertNotIn(private, json.dumps(aggregate))
         with self.assertRaisesRegex(ValueError, "duplicate run"):
             eval_score.import_summary(self.directory, path, "primary")
 
@@ -262,6 +296,20 @@ class EvaluationScoreTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 eval_score.import_summary(self.directory, path, "primary")
             self.assertEqual(eval_score.load_campaign(self.directory)[1]["runs"], [])
+
+    def test_grading_context_is_required_and_cannot_change_after_import(self) -> None:
+        path, summary = self.summary()
+        del summary["results"][0]["grading_context_file"]
+        eval_score.write_json(path, summary)
+        with self.assertRaisesRegex(ValueError, "grading context is required"):
+            eval_score.import_summary(self.directory, path, "primary")
+        summary["results"][0]["grading_context_file"] = "grading-context.json"
+        eval_score.write_json(path, summary)
+        eval_score.import_summary(self.directory, path, "primary")
+        record = eval_score.load_campaign(self.directory)[1]["runs"][0]
+        Path(record["grading_context"]["path"]).write_text("{}", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "grading context changed"):
+            eval_score.assess(record, EXPECTED)
 
     def test_import_rejects_timeout_drift_and_failed_input_integrity(self) -> None:
         path, original = self.summary()
@@ -322,6 +370,10 @@ class ClaudeEvaluationTests(unittest.TestCase):
             self.assertEqual(result["observed_model"], "claude-model")
             self.assertEqual(result["cost_usd"], 0.1)
             self.assertTrue((Path(directory) / "negative-refactor-en-1/answer.txt").is_file())
+            context = eval_score.read_json(Path(directory) / "negative-refactor-en-1/grading-context.json")
+            self.assertEqual(context["agent"], "claude")
+            self.assertEqual({item["path"] for item in context["excluded_paths"]}, {".git/", ".claude/"})
+            self.assertIn(".claude/skills/evidence-code-review/SKILL.md", {item["path"] for item in context["files"]})
 
     def test_installed_skill_is_not_an_invocation_and_result_must_succeed(self) -> None:
         events = [{"type": "system", "subtype": "init", "model": "claude-model", "skills": ["evidence-code-review"]},

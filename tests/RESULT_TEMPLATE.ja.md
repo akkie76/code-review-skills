@@ -23,6 +23,7 @@
 - 必須の動作を確認：
 - 禁止する動作を確認：
 - 追加コメント：
+- 指摘でない質問／対象外注記と、確認した事実上の前提：
 - 予期しない出力の分類：valid / ambiguous / false positive
 - campaignのmanifest hash / 区分（primary・repeat）：
 - 検出した必須項目index / 見逃した項目：
@@ -30,6 +31,7 @@
 - 根拠不足の補足 / 禁止された期待項目index：
 - 人による確定 / reviewer / 未確定の判定：
 - 採点入力 / 除外ファイル / 置換内容：
+- 非公開grading-contextの一覧／hash／除外した基盤ファイル：
 - 採点入力の除外による未確定の主張 / 照合した根拠：
 - follow-up：
 
