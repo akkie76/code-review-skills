@@ -2,8 +2,9 @@
 
 [日本語](EVALUATION_BATCHES.ja.md)
 
-This is an execution plan for the 28 fixtures in `tests/cases/`, not a quality
-threshold or a substitute for human adjudication. It limits the size of each
+This is a primary-pass execution plan for the 28 fixtures in `tests/cases/`, not
+a substitute for human adjudication. The [80-point campaign](EVALUATION_RUBRIC.md)
+adds one Japanese negative and six predefined repeat sessions. It limits the size of each
 opt-in CLI invocation so usage can be checked between batches. Do not launch
 the four groups or all 28 fixtures in parallel.
 
@@ -28,10 +29,15 @@ the four groups or all 28 fixtures in parallel.
 For example, the first batch can be previewed without a model call:
 
 ```sh
-make eval EVAL_ARGS="--case negative-go-format --case negative-optional-label --runs 1"
+make eval EVAL_ARGS="--revision REVISION_SHA --case negative-go-format --case negative-optional-label --runs 1"
 ```
 
-After choosing a supported model, add `--model MODEL_ID --execute` to that
+Use a dedicated clone/worktree not switched by editors or Git clients. Replace
+`REVISION_SHA` with the full common commit from campaign initialization; use
+`--revision` for every batch. Do not reuse historical campaigns after tooling
+changes. The snapshot and per-session checks stop revision/input drift.
+
+After choosing a supported model, add `--model MODEL_ID --timeout 300 --execute` to that
 command. Replace `MODEL_ID` with the actual CLI model identifier; do not run
 the placeholder verbatim. The runner prints the local output directory after
 execution. Review its `summary.json`, each `answer.txt`, and the relevant
@@ -74,5 +80,5 @@ does not replace its first-pass run after the evaluation revision and model are
 fixed. After each group, record completed case IDs, local output directories,
 agent errors, token usage, and pending human judgments. Compare findings, not
 only prefix strings, before deciding which cases need repeated runs. The
-existing [manual evaluation record](RESULT_TEMPLATE.md) remains the judgment
-format until issue #24 adds finding-level aggregation.
+existing [manual evaluation record](RESULT_TEMPLATE.md) remains useful for notes;
+use the [local adjudication workflow](EVALUATION_RUBRIC.md) for finding-level aggregation.

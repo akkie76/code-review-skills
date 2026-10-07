@@ -2,7 +2,8 @@
 
 [English](EVALUATION_BATCHES.md)
 
-これは`tests/cases/`の28件に対する実行計画です。品質の合格基準や人による判定の
+これは`tests/cases/`の28件に対する基本評価の実行計画です。[80点を基準とする評価](EVALUATION_RUBRIC.ja.md)
+では日本語の負例1回と、事前に固定した反復6回を追加します。人による判定の
 代替ではありません。各CLI呼び出しを小さくし、利用量を確認してから次へ進むための
 ものです。4グループや全28件を並列に実行しないでください。
 
@@ -24,10 +25,14 @@
 最初のbatchは、モデルを呼ばずに次のように確認できます。
 
 ```sh
-make eval EVAL_ARGS="--case negative-go-format --case negative-optional-label --runs 1"
+make eval EVAL_ARGS="--revision REVISION_SHA --case negative-go-format --case negative-optional-label --runs 1"
 ```
 
-対応するモデルを選んだ後、このコマンドへ`--model MODEL_ID --execute`を追加します。
+エディタやGitクライアントが切り替えない専用clone／worktreeを使います。
+`REVISION_SHA`はcampaign初期化時の共通の完全なcommit SHAへ置き換え、毎回`--revision`を指定します。
+tooling変更後に過去のcampaignを再利用しません。スナップショットと各sessionの確認で入力変更時に停止します。
+
+対応するモデルを選んだ後、このコマンドへ`--model MODEL_ID --timeout 300 --execute`を追加します。
 `MODEL_ID`は実際のCLIモデル名に置き換え、プレースホルダーのまま実行しないで
 ください。実行後にランナーが表示する保存先で`summary.json`、各`answer.txt`、
 該当する`case.json`を確認してから次へ進みます。Skillの起動確認と、回答がfixtureの
@@ -67,5 +72,5 @@ Codexのread-onlyとClaudeの静的レビュー用許可一覧は異なる設定
 評価対象のrevisionとモデルを固定した後の初回評価の代わりにはしません。各グループ後に
 完了したcase ID、ローカル保存先、エージェントのエラー、トークン使用量、人による
 未判定事項を記録します。再実行するcaseを決める前に、prefixだけでなく指摘内容を
-照合します。#24で指摘単位の集計を追加するまで、判定には既存の
-[手動評価記録](RESULT_TEMPLATE.ja.md)を使用します。
+照合します。既存の[手動評価記録](RESULT_TEMPLATE.ja.md)を注記に使い、
+指摘単位の集計には[ローカルの判定・集計手順](EVALUATION_RUBRIC.ja.md)を使用します。

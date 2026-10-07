@@ -13,7 +13,7 @@
 - Request language:
 - Fresh session: yes / no
 - Invocation mode: implicit / explicit
-- Invocation evidence: confirmed / by_construction / file_read_observed / not_observed
+- Invocation evidence: confirmed / call_requested / call_failed / by_construction / file_read_observed / not_observed
 - Skill invoked: yes / no / not verified
 - Tool permissions / fixture-code execution allowed:
 - Denied verification attempts / isolation limitations:
@@ -23,8 +23,15 @@
 - Required behavior observed:
 - Prohibited behavior observed:
 - Additional comments:
+- Non-finding questions / scope notes and verified factual premises:
 - Classification of unexpected output: valid / ambiguous / false positive
+- Campaign manifest hash / phase (primary or repeat):
+- Required expectation indices detected / missed:
+- Optional / valid additional / duplicate / unsupported findings:
+- Unsupported supporting claims / prohibited expectation indices:
+- Human finalization / reviewer / unresolved judgments:
 - Grading inputs / excluded files / redactions:
+- Private grading-context inventory / hash / omitted infrastructure:
 - Indeterminate claims due to grading exclusions / reconciliation evidence:
 - Follow-up:
 

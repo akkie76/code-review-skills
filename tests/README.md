@@ -59,7 +59,13 @@ using diff size or the number of findings as a quality measure. The wider
 suite also contains JavaScript cases, giving meaningful examples in four
 languages overall.
 
-## Opt-in local Codex runs (initial automation)
+## Opt-in local agent runs
+
+Codex is the default. Use `--agent claude` to install the Claude package and run
+its non-interactive static-only protocol. Claude authentication and the chosen
+model must be available on the executing PC. The Codex-specific details below
+do not imply equivalent Claude sandbox behavior; see the shared
+[campaign protocol](EVALUATION_RUBRIC.md).
 
 `make test` remains offline and never calls a model. To plan a Codex run without
 using tokens, specify one or more case IDs (or explicitly select `--all`):
@@ -88,7 +94,9 @@ rejects both explicit paths and a default temporary location (`TMPDIR`) that
 resolve inside this repository, including symlinks, before creating output.
 Choose an outside-repository `--output-dir` if your temporary location is rejected.
 The runner prints its location. It saves `events.jsonl`, `answer.txt`, and `stderr.txt` for
-each run, plus `summary.json`. Do not commit these raw files. Remove the local
+each run, plus `grading-context.json` (private file inventory and grading exclusions)
+and `summary.json`. Transfer the complete run directories, including the grading
+context, to graders/scoring hosts. Do not commit these raw files. Remove the local
 directory when it is no longer needed, and check its contents before sharing.
 
 Schema 2 summaries separate the requested model from any model reported in CLI
@@ -128,6 +136,19 @@ This is the first stage of [issue #24](https://github.com/akkie76/code-review-sk
 not a replacement for the two-agent release evaluation.
 
 ## Manual agent evaluation
+
+For issue #24's 80-point campaign, use the [adjudication rubric and scoring
+workflow](EVALUATION_RUBRIC.md). `make eval-score` freezes the input manifest,
+imports raw runner summaries into unreviewed local annotations, and aggregates
+human-finalized judgments. `make eval` also accepts `--agent claude` for the
+documented static-only protocol. Both commands are offline unless the runner
+is explicitly given `--execute`; scoring never calls a model.
+
+The v2 rubric distinguishes grounded open questions and accurate non-actionable
+scope notes from findings, but checks factual premises throughout the answer.
+Hedging does not excuse unsupported evidence. It corrects the mandatory-layer-rule
+fixture to `MUST(Design)` and retains setup `MUST` / small dead-helper `NITS`.
+These changes apply only to new frozen campaigns, not historical score revisions.
 
 Run each case separately with both Codex and Claude Code:
 
@@ -181,7 +202,7 @@ Record invocation evidence separately from output matches:
 
 | Agent/mode | Evidence | Recorded value |
 | --- | --- | --- |
-| Claude, implicit | `Skill` tool call with `input.skill == "evidence-code-review"` | `confirmed`; otherwise `not_observed` |
+| Claude, implicit | `Skill` request for `evidence-code-review` paired by ID with a successful `tool_result` | `confirmed`; request only: `call_requested`; failed result: `call_failed`; otherwise `not_observed` |
 | Claude, explicit | Explicit command plus Skill present in the init event's `skills` list | `by_construction`, not a directly observed invocation |
 | Codex | Skill-file read in CLI events | `file_read_observed`; invocation remains `not_verified` |
 

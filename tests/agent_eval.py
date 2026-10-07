@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Opt-in, local Codex evaluation of behavioral fixtures.
+"""Opt-in, local Codex and Claude Code evaluation of behavioral fixtures.
 
 This runner never publishes transcripts or judges semantic correctness. Its
 summary records observable facts for subsequent human adjudication.
@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -22,6 +23,97 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "tests/cases"
 SKILL = ROOT / "dist/codex/evidence-code-review"
+INPUT_PATHS = [
+    "src", "dist", "tests/cases", "tests/agent_eval.py",
+    "tests/eval_score.py", "tests/EVALUATION_PLAN.json",
+    "tests/EVALUATION_RUBRIC.md", "tests/EVALUATION_RUBRIC.ja.md",
+]
+TOOL_PATHS = ("tests/agent_eval.py", "tests/eval_score.py")
+SNAPSHOT_ACTIVE = False
+OUTPUT_REPOSITORY_ROOTS: tuple[Path, ...] = ()
+LOADED_TOOL_HASHES = {
+    name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in TOOL_PATHS
+}
+
+
+@contextmanager
+def revision_snapshot(revision: str):
+    """Private local clone: no shared object store, original ref or worktree writes."""
+    global ROOT, CASES, SKILL, SNAPSHOT_ACTIVE, OUTPUT_REPOSITORY_ROOTS
+    original = (ROOT, CASES, SKILL)
+    previous_snapshot, previous_outputs = SNAPSHOT_ACTIVE, OUTPUT_REPOSITORY_ROOTS
+    resolved = run_command(["git", "rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}"], ROOT)
+    if resolved.returncode:
+        raise RuntimeError("cannot resolve evaluation revision")
+    commit = resolved.stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40,64}", commit):
+        raise RuntimeError("resolved evaluation revision is not a commit hash")
+    with tempfile.TemporaryDirectory(prefix="review-inputs-") as directory:
+        snapshot = Path(directory) / "repository"
+        commands = [
+            ["git", "-c", "core.hooksPath=/dev/null", "clone", "--quiet", "--no-local",
+             "--no-checkout", str(ROOT), str(snapshot)],
+            ["git", "-c", "core.hooksPath=/dev/null", "-C", str(snapshot),
+             "fetch", "--quiet", "--no-tags", str(ROOT), commit],
+            ["git", "-c", "core.hooksPath=/dev/null", "-C", str(snapshot),
+             "checkout", "--quiet", "--detach", commit],
+        ]
+        for command in commands:
+            result = run_command(command, original[0], timeout=60)
+            if result.returncode:
+                raise RuntimeError("cannot create isolated evaluation snapshot")
+        for name, expected in LOADED_TOOL_HASHES.items():
+            path = snapshot / name
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                raise RuntimeError("snapshot tooling differs from executing tooling; use a new common revision")
+        try:
+            ROOT, CASES, SKILL = snapshot, snapshot / "tests/cases", snapshot / "dist/codex/evidence-code-review"
+            SNAPSHOT_ACTIVE = True
+            OUTPUT_REPOSITORY_ROOTS = (*previous_outputs, original[0])
+            yield commit
+        finally:
+            ROOT, CASES, SKILL = original
+            SNAPSHOT_ACTIVE, OUTPUT_REPOSITORY_ROOTS = previous_snapshot, previous_outputs
+
+
+def run_settings(agent: str, timeout: int) -> dict:
+    if agent == "codex":
+        return {"sandbox": "read-only", "ephemeral": True, "ignore_user_config": True,
+                "approval_policy": "never", "timeout_seconds": timeout}
+    return {"permissions": "fixed_static_allowlist", "permission_mode": "dontAsk",
+            "fixture_code_execution": False, "setting_sources": "project",
+            "strict_mcp_config": True, "session_persistence": False,
+            "isolation_limitations": "User Skills/memory and managed settings may remain visible.",
+            "timeout_seconds": timeout}
+
+
+def evaluation_state(agent: str) -> dict:
+    revision = run_command(["git", "rev-parse", "HEAD"], ROOT)
+    if revision.returncode:
+        raise RuntimeError("cannot identify evaluation revision")
+    return {"revision": revision.stdout.strip(), "inputs_dirty": worktree_dirty(INPUT_PATHS),
+            "fixture_sha256": fixture_hash(), "skill": package_metadata(skill_path(agent))}
+
+
+def verify_evaluation_state(expected: dict, agent: str) -> None:
+    current = evaluation_state(agent)
+    if expected["inputs_dirty"] is not False or current != expected:
+        raise RuntimeError("evaluation revision or inputs changed; stop and retain this campaign")
+
+
+def skill_path(agent: str) -> Path:
+    return SKILL if agent == "codex" else ROOT / "dist/claude-code/evidence-code-review"
+
+
+def fixture_hash() -> str:
+    digest = hashlib.sha256()
+    for path in sorted(path for path in CASES.rglob("*") if path.is_file()
+                       and "__pycache__" not in path.parts and path.suffix not in {".pyc", ".pyo"}):
+        digest.update(path.relative_to(CASES).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
+
 PREFIX = re.compile(
     r"(?m)^[ \t]*(?:(?:#{1,6}|[-*+]|\d+[.)])[ \t]+|>[ \t]*)*"
     r"(?:\*\*|__|`)?"
@@ -67,10 +159,13 @@ def selected_cases(names: list[str] | None, all_cases: bool, language: str) -> l
     return selected
 
 
-def prepare_repository(case_dir: Path, destination: Path) -> None:
+def prepare_repository(case_dir: Path, destination: Path, agent: str = "codex") -> None:
     shutil.copytree(case_dir / "repository", destination)
-    skill_target = destination / ".agents/skills/evidence-code-review"
-    shutil.copytree(SKILL, skill_target)
+    skill_target = destination / (
+        ".agents/skills/evidence-code-review" if agent == "codex"
+        else ".claude/skills/evidence-code-review"
+    )
+    shutil.copytree(skill_path(agent), skill_target)
     commands = [
         ["git", "init", "-q"],
         ["git", "add", "-A"],
@@ -192,27 +287,111 @@ def observed_output(answer: str, expected: dict) -> dict:
     }
 
 
-def evaluate_one(
-    case_dir: Path, case: dict, prompt: str, language: str, run_number: int,
-    output_dir: Path, model: str | None, timeout: int,
-) -> dict:
-    run_dir = output_dir / f"{case['id']}-{language}-{run_number}"
-    run_dir.mkdir(mode=0o700)
-    with tempfile.TemporaryDirectory(prefix="repo-") as temporary:
-        repo = Path(temporary) / "repository"
-        prepare_repository(case_dir, repo)
-        installed_skill = repo / ".agents/skills/evidence-code-review"
-        skill = package_metadata(installed_skill)
-        skill_text = (installed_skill / "SKILL.md").read_text(encoding="utf-8")
-        answer_file = run_dir / "answer.txt"
+def claude_result(events: str) -> dict:
+    """Extract observable metadata; installed Skills alone do not prove invocation."""
+    result = {"answer": "", "model": None, "usage": None, "cost": None,
+              "invoked": False, "completed": False}
+    requests: set[str] = set()
+    successes: set[str] = set()
+    failures: set[str] = set()
+    for line in events.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") == "system" and event.get("subtype") == "init":
+            result["model"] = event.get("model") or None
+        if event.get("type") in {"assistant", "user"}:
+            message = event.get("message", {})
+            for block in message.get("content", []) if isinstance(message, dict) else []:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_use" and block.get("name") == "Skill":
+                    inputs = block.get("input", {})
+                    identifier = block.get("id")
+                    if (event["type"] == "assistant" and isinstance(inputs, dict)
+                            and inputs.get("skill") == "evidence-code-review"
+                            and isinstance(identifier, str) and identifier):
+                        requests.add(identifier)
+                if block.get("type") == "tool_result" and block.get("tool_use_id") in requests:
+                    if block.get("is_error") is True:
+                        failures.add(block["tool_use_id"])
+                    elif block.get("is_error", False) is False:
+                        successes.add(block["tool_use_id"])
+        if event.get("type") == "result":
+            result["completed"] = event.get("subtype") == "success" and not event.get("is_error", False)
+            result["answer"] = event.get("result") if isinstance(event.get("result"), str) else ""
+            result["usage"] = event.get("usage")
+            result["cost"] = event.get("total_cost_usd")
+    result["invoked"] = bool(successes - failures)
+    result["skill_evidence"] = "confirmed" if result["invoked"] else (
+        "call_failed" if failures else "call_requested" if requests else "not_observed"
+    )
+    return result
+
+
+def agent_command(agent: str, repo: Path, answer_file: Path, prompt: str,
+                  model: str | None) -> list[str]:
+    if agent == "codex":
         command = [
             "codex", "exec", "--cd", str(repo), "--ephemeral", "--ignore-user-config",
             "--sandbox", "read-only", "--json", "--output-last-message", str(answer_file),
             "--config", 'approval_policy="never"',
         ]
-        if model:
-            command.extend(["--model", model])
-        command.append(prompt)
+    else:
+        command = [
+            "claude", "-p", "--setting-sources", "project", "--strict-mcp-config",
+            "--mcp-config", '{"mcpServers":{}}', "--no-session-persistence",
+            "--permission-mode", "dontAsk", "--tools", "Read,Grep,Glob,Skill,Bash",
+            "--allowedTools", "Read", "Grep", "Glob", "Skill",
+            "Bash(git diff:*)", "Bash(git status:*)", "Bash(git log:*)", "Bash(git show:*)",
+            "--disallowedTools", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch",
+            "--output-format", "stream-json", "--verbose",
+        ]
+    if model:
+        command.extend(["--model", model])
+    command.append(prompt)
+    return command
+
+
+def grading_context(repo: Path, agent: str, skill: dict) -> dict:
+    """Private inventory for graders; path presence is not proof of behavior."""
+    roots = {".git": "generated Git metadata", ".agents": "installed Codex Skill",
+             ".claude": "installed Claude Skill"}
+    excluded = [{"path": name + "/", "reason": reason}
+                for name, reason in roots.items() if (repo / name).exists()]
+    files = [{"path": path.relative_to(repo).as_posix(),
+              "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+             for path in sorted(repo.rglob("*")) if path.is_file()]
+    return {"schema_version": 1, "agent": agent, "skill": skill,
+            "excluded_paths": excluded, "files": files,
+            "notes": "Inventory before review. Excluded infrastructure is present, not part of the product diff. "
+                     "Inspect its content or the raw trace to verify behavior; do not infer facts from presence."}
+
+
+def evaluate_one(
+    case_dir: Path, case: dict, prompt: str, language: str, run_number: int,
+    output_dir: Path, model: str | None, timeout: int, agent: str = "codex",
+) -> dict:
+    run_dir = output_dir / f"{case['id']}-{language}-{run_number}"
+    run_dir.mkdir(mode=0o700)
+    with tempfile.TemporaryDirectory(prefix="repo-") as temporary:
+        repo = Path(temporary) / "repository"
+        prepare_repository(case_dir, repo, agent)
+        installed_skill = repo / (
+            ".agents/skills/evidence-code-review" if agent == "codex"
+            else ".claude/skills/evidence-code-review"
+        )
+        skill = package_metadata(installed_skill)
+        skill_text = (installed_skill / "SKILL.md").read_text(encoding="utf-8")
+        (run_dir / "grading-context.json").write_text(
+            json.dumps(grading_context(repo, agent, skill), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        answer_file = run_dir / "answer.txt"
+        command = agent_command(agent, repo, answer_file, prompt, model)
         try:
             result = run_command(command, repo, timeout=timeout)
             exit_code = result.returncode
@@ -224,39 +403,48 @@ def evaluate_one(
             stderr += f"\nEvaluation timed out after {timeout} seconds."
         (run_dir / "events.jsonl").write_text(events, encoding="utf-8")
         (run_dir / "stderr.txt").write_text(stderr, encoding="utf-8")
+        claude = claude_result(events) if agent == "claude" else None
+        if claude is not None:
+            answer_file.write_text(claude["answer"], encoding="utf-8")
         answer = answer_file.read_text(encoding="utf-8") if answer_file.exists() else ""
         if not answer_file.exists():
             answer_file.write_text("", encoding="utf-8")
-        model_evidence = reported_model(events, stderr)
+        model_evidence = reported_model(events, stderr) if claude is None else {
+            "model": claude["model"], "source": "event" if claude["model"] else "unavailable"
+        }
         read_observed = skill_file_read_observed(events, skill_text)
+        completed = exit_code == 0 and bool(answer.strip()) and (claude is None or claude["completed"])
+        evidence = ("file_read_observed" if read_observed else "not_observed") if claude is None else claude["skill_evidence"]
         return {
             "case_id": case["id"],
             "language": language,
             "run_number": run_number,
             "exit_code": exit_code,
-            "status": "completed" if exit_code == 0 and answer.strip() else (
+            "status": "completed" if completed else (
                 "no_answer" if exit_code == 0 else "agent_error"
             ),
-            "usage": event_usage(events),
+            "usage": event_usage(events) if claude is None else claude["usage"],
+            "cost_usd": None if claude is None else claude["cost"],
             "requested_model": model,
             "observed_model": model_evidence["model"],
             "model_evidence": model_evidence["source"],
             "skill": skill,
             "invocation_mode": "implicit",
             "skill_file_read_observed": read_observed,
-            "skill_evidence": "file_read_observed" if read_observed else "not_observed",
-            "skill_invocation": "not_verified",
+            "skill_evidence": evidence,
+            "skill_invocation": "confirmed" if evidence == "confirmed" else "not_verified",
             "observed": observed_output(answer, case["expectations"]),
             "raw_directory": run_dir.name,
+            "grading_context_file": "grading-context.json",
         }
 
 
 def output_directory(requested: Path | None) -> Path:
-    repository = ROOT.resolve()
+    repositories = [path.resolve() for path in (ROOT, *OUTPUT_REPOSITORY_ROOTS)]
 
     def outside_repository(path: Path) -> Path:
         resolved = path.expanduser().resolve()
-        if resolved == repository or repository in resolved.parents:
+        if any(resolved == repository or repository in resolved.parents for repository in repositories):
             raise ValueError("evaluation output must be outside this repository")
         return resolved
 
@@ -281,7 +469,9 @@ def main(argv: list[str] | None = None) -> int:
     selection.add_argument("--all", action="store_true", help="Run every fixture")
     parser.add_argument("--language", choices=("auto", "en", "ja"), default="auto")
     parser.add_argument("--runs", type=int, default=1, help="Fresh runs per selected case")
-    parser.add_argument("--model", help="Explicit Codex model; otherwise use the CLI default")
+    parser.add_argument("--model", help="Explicit agent model; otherwise use the CLI default")
+    parser.add_argument("--agent", choices=("codex", "claude"), default="codex")
+    parser.add_argument("--revision", help="Exact commit/ref to export into a private isolated snapshot")
     parser.add_argument("--timeout", type=int, default=600, help="Seconds per run")
     parser.add_argument("--output-dir", type=Path, help="New local directory outside the repository")
     parser.add_argument("--execute", action="store_true", help="Confirm that model calls may consume tokens")
@@ -289,46 +479,60 @@ def main(argv: list[str] | None = None) -> int:
     if args.runs < 1 or args.timeout < 1:
         parser.error("--runs and --timeout must be positive")
     try:
+        if args.revision:
+            with revision_snapshot(args.revision):
+                return run_evaluation(args, parser)
+        return run_evaluation(args, parser)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+        parser.error(str(error))
+
+
+def run_evaluation(args, parser) -> int:
+    try:
+        state = evaluation_state(args.agent) if args.execute else None
+        if state is not None:
+            verify_evaluation_state(state, args.agent)
         cases = selected_cases(args.case, args.all, args.language)
-    except (OSError, KeyError, ValueError) as error:
+        if state is not None:
+            verify_evaluation_state(state, args.agent)
+    except (OSError, KeyError, ValueError, RuntimeError) as error:
         parser.error(str(error))
     if not args.execute:
-        print(f"Planned {len(cases) * args.runs} Codex run(s) across {len(cases)} case(s).")
+        print(f"Planned {len(cases) * args.runs} {args.agent} run(s) across {len(cases)} case(s).")
         print("No model calls made. Add --execute to run the evaluation.")
         return 0
-    if not SKILL.is_dir():
-        parser.error("generated Codex Skill is missing; run make build")
-    if shutil.which("codex") is None:
-        parser.error("Codex CLI is not installed")
+    if not skill_path(args.agent).is_dir():
+        parser.error("generated Skill is missing; run make build")
+    if shutil.which(args.agent) is None:
+        parser.error(f"{args.agent} CLI is not installed")
     try:
         destination = output_directory(args.output_dir)
     except (OSError, ValueError) as error:
         parser.error(str(error))
-    version = run_command(["codex", "--version"], ROOT)
-    revision = run_command(["git", "rev-parse", "HEAD"], ROOT)
+    version = run_command([args.agent, "--version"], ROOT)
     try:
-        skill = package_metadata(SKILL)
-    except OSError as error:
-        parser.error(f"cannot read generated Skill metadata: {error}")
+        verify_evaluation_state(state, args.agent)
+    except (OSError, RuntimeError) as error:
+        parser.error(str(error))
     report = {
         "schema_version": 2,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "agent": "codex",
+        "agent": args.agent,
         "agent_version": version.stdout.strip() if version.returncode == 0 else "unavailable",
         "model": args.model or "unavailable (CLI default)",
         "model_source": "requested" if args.model else "unavailable",
         "requested_model": args.model,
         "observed_models": [],
         "cost": "unavailable",
-        "skill_revision": revision.stdout.strip() if revision.returncode == 0 else "unavailable",
+        "skill_revision": state["revision"],
         "worktree_dirty": worktree_dirty(),
-        "evaluation_inputs_dirty": worktree_dirty([
-            "src", "dist", "tests/cases", "tests/agent_eval.py"
-        ]),
-        "skill": skill,
+        "evaluation_inputs_dirty": state["inputs_dirty"],
+        "fixture_sha256": state["fixture_sha256"],
+        "skill": state["skill"],
+        "input_integrity": "verified",
+        "input_source": "revision_snapshot" if args.revision else "live_checkout",
         "invocation_mode": "implicit",
-        "settings": {"sandbox": "read-only", "ephemeral": True, "ignore_user_config": True,
-                     "approval_policy": "never", "timeout_seconds": args.timeout},
+        "settings": run_settings(args.agent, args.timeout),
         "selected_cases": [case["id"] for _, case, _, _ in cases],
         "requested_runs_per_case": args.runs,
         "results": [],
@@ -341,11 +545,21 @@ def main(argv: list[str] | None = None) -> int:
     try:
         for case_dir, case, prompt, case_language in cases:
             for run_number in range(1, args.runs + 1):
+                verify_evaluation_state(state, args.agent)
                 print(f"Evaluating {case['id']} ({case_language}, run {run_number}/{args.runs})", flush=True)
-                report["results"].append(evaluate_one(
+                result = evaluate_one(
                     case_dir, case, prompt, case_language, run_number,
-                    destination, args.model, args.timeout,
-                ))
+                    destination, args.model, args.timeout, args.agent,
+                )
+                report["results"].append(result)
+                try:
+                    verify_evaluation_state(state, args.agent)
+                    if result.get("skill", state["skill"]) != state["skill"]:
+                        raise RuntimeError("copied Skill differs from frozen input")
+                except (OSError, RuntimeError) as error:
+                    result["status"] = "agent_error"
+                    result["error"] = str(error)
+                    raise RuntimeError(str(error)) from error
                 observed_models = sorted({
                     item["observed_model"] for item in report["results"]
                     if item.get("observed_model")
@@ -357,7 +571,15 @@ def main(argv: list[str] | None = None) -> int:
                 (destination / "summary.json").write_text(
                     json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
                 )
+                if result["status"] != "completed":
+                    print("ERROR: incomplete agent run; stopping this invocation", file=sys.stderr)
+                    return 1
     except (OSError, RuntimeError) as error:
+        report["input_integrity"] = "failed"
+        report["abort_reason"] = str(error)
+        (destination / "summary.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
         print(f"ERROR: {error}", file=sys.stderr)
         print(f"Local evaluation files: {destination}", file=sys.stderr)
         return 1

@@ -51,7 +51,12 @@ setup guideには匿名モードの説明を残しています。`should-missing
 `must_not_report`の候補も含めて各関心事を確認します。既存のJavaScriptのcaseを
 含めると、評価セット全体で4言語の実質的な例を扱います。
 
-## 任意実行のCodexローカル評価（自動化の初期段階）
+## 任意実行のエージェントローカル評価
+
+既定はCodexです。`--agent claude`でClaude向けpackageを配置し、非対話・静的レビュー用の
+手順で実行します。実行PCでClaudeの認証と選んだmodelが利用できる必要があります。
+以下のCodex固有の説明はClaudeのsandboxとの同等性を示すものではありません。
+[共通の評価手順](EVALUATION_RUBRIC.ja.md)も確認してください。
 
 `make test`は引き続きオフラインであり、モデルを呼び出しません。トークンを消費せずに
 Codexの実行予定を確認するには、case IDを1つ以上（または明示的に`--all`）指定します。
@@ -111,6 +116,20 @@ Skillの起動確認、指摘の意味的な一致、想定外の指摘の分類
 
 ## エージェントによる手動評価
 
+#24の80点を基準とする評価には、[判定ルール・集計手順](EVALUATION_RUBRIC.ja.md)を使います。
+v2の採点基準では、根拠のある質問・正確で対応不要の対象外注記を指摘と分けつつ、回答全体の
+事実の前提を検証します。断りを付けても根拠不足は許しません。必須レイヤー規約のfixtureは
+`MUST(Design)`へ修正し、setupの`MUST`・小さな未使用helperの`NITS`は維持します。
+変更は新しい固定campaignにのみ適用し、過去の得点は書き換えません。
+
+各runの非公開`grading-context.json`（ファイル一覧・hash・採点時の除外先）も回答とともに採点者へ渡し、
+生の実行ディレクトリを丸ごと転送してください。この情報は公開しません。
+
+`make eval-score`で入力を固定し、runnerの生の集計をローカルの未確認注記へ取り込み、
+人が確定した判定を集計します。`make eval`は静的レビュー用の手順に沿った
+`--agent claude`にも対応します。runnerへ明示的に`--execute`を指定しなければ
+モデルを呼び出さず、集計処理は常にオフラインです。
+
 CodexとClaude Codeの両方で、caseごとに次を実施します。
 
 1. 評価対象エージェントへ生成済みパッケージをインストールする
@@ -151,7 +170,7 @@ Skill起動を観測できなかった回だけ、必要に応じて`/evidence-c
 
 | エージェント・方式 | 根拠 | 記録する値 |
 | --- | --- | --- |
-| Claude・implicit | `input.skill == "evidence-code-review"`の`Skill` tool呼び出し | `confirmed`。なければ`not_observed` |
+| Claude・implicit | `evidence-code-review`への`Skill`要求と、同じIDに対応する成功した`tool_result` | `confirmed`。要求のみ：`call_requested`、失敗結果：`call_failed`、観測なし：`not_observed` |
 | Claude・explicit | 明示コマンドに加え、initイベントの`skills`一覧に存在 | `by_construction`。起動を直接観測したものではない |
 | Codex | CLI記録上のSkillファイル読み取り | `file_read_observed`。起動は`not_verified`のまま |
 
