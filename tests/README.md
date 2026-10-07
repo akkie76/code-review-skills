@@ -194,7 +194,7 @@ Record invocation evidence separately from output matches:
 
 | Agent/mode | Evidence | Recorded value |
 | --- | --- | --- |
-| Claude, implicit | `Skill` tool call with `input.skill == "evidence-code-review"` | `confirmed`; otherwise `not_observed` |
+| Claude, implicit | `Skill` request for `evidence-code-review` paired by ID with a successful `tool_result` | `confirmed`; request only: `call_requested`; failed result: `call_failed`; otherwise `not_observed` |
 | Claude, explicit | Explicit command plus Skill present in the init event's `skills` list | `by_construction`, not a directly observed invocation |
 | Codex | Skill-file read in CLI events | `file_read_observed`; invocation remains `not_verified` |
 

@@ -25,10 +25,14 @@
 最初のbatchは、モデルを呼ばずに次のように確認できます。
 
 ```sh
-make eval EVAL_ARGS="--case negative-go-format --case negative-optional-label --runs 1"
+make eval EVAL_ARGS="--revision REVISION_SHA --case negative-go-format --case negative-optional-label --runs 1"
 ```
 
-対応するモデルを選んだ後、このコマンドへ`--model MODEL_ID --execute`を追加します。
+エディタやGitクライアントが切り替えない専用clone／worktreeを使います。
+`REVISION_SHA`はcampaign初期化時の共通の完全なcommit SHAへ置き換え、毎回`--revision`を指定します。
+tooling変更後に過去のcampaignを再利用しません。スナップショットと各sessionの確認で入力変更時に停止します。
+
+対応するモデルを選んだ後、このコマンドへ`--model MODEL_ID --timeout 300 --execute`を追加します。
 `MODEL_ID`は実際のCLIモデル名に置き換え、プレースホルダーのまま実行しないで
 ください。実行後にランナーが表示する保存先で`summary.json`、各`answer.txt`、
 該当する`case.json`を確認してから次へ進みます。Skillの起動確認と、回答がfixtureの

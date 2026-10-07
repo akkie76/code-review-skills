@@ -24,7 +24,7 @@ Codex・Claude Codeが**それぞれ80点以上**であることが必要です�
 両エージェントで、同じcleanなsource revisionとfixture hashを使います。
 明示的なmodel IDとインストールするpackage hashを開始前に固定します。
 エージェント別のpackage hashは異なっても、生成元hashは一致する必要があります。
-各エージェントのCLI version・固定した権限手順は途中で変えません。実行環境、利用できない
+各エージェントのCLI version・固定した権限手順・初期化時に固定するtimeoutは途中で変えません。実行環境、利用できない
 runtime、拒否された検証、隔離の制約をローカルの注記と機密情報を除いた報告へ記録します。
 Codexのread-onlyは実行を許可し得ますが、Claudeは静的レビュー用の許可一覧です。
 これは同一実行能力の比較ではなく、記録した各host構成の比較です。
@@ -54,11 +54,15 @@ source・fixture・model・条件を変更する場合は、新しい評価campa
 
 厳密なケース合格には、必須項目、期待prefix、要求された出力種別、出力契約を満たし、
 禁止された記述と根拠不足の指摘・補足がないことが必要です。
-内容が有益でもprefix差は不合格のままです。正例での妥当な追加・任意コメントは減点しません。
+内容が有益でもprefix差は不合格のままです。必須コメントはそれぞれ期待prefixを満たす必要があり、
+追加・任意コメントのprefixで必須コメントの不一致を補えません。注記の`prefix`は正確な
+`ACTION(Viewpoint)`トークン（埋め込んだ補足ならnull）のみとし、本文やローカルパスを入れません。
+正例での妥当な追加・任意コメントは減点しません。
 負例は、意味のある回答があり、prefixのない不具合の主張も含め指摘がないことが必要です。
 正規表現の`explicit_no_findings`を意味的な判定に使いません。
 
-起動の根拠は別に記録します。Claudeは`Skill` toolの呼び出し確認が必要で、init一覧だけでは足りません。
+起動の根拠は別に記録します。Claudeは`Skill` toolの要求と、同じIDに対応する成功した`tool_result`が必要です。
+要求だけ、エラー、init一覧だけでは足りません。`call_requested`・`call_failed`を起動確認として数えません。
 Codexは現在ファイル読み取りまでしか観測できないため、`file_read_observed`を**限定的なアクセスの
 根拠として採点に使用しますが、起動確認や因果関係の証明とはしません**。
 Skillへのアクセスを観測できない回答をSkillの合格として数えません。
@@ -86,15 +90,28 @@ Skillへのアクセスを観測できない回答をSkillの合格として数�
 
 ## ローカルでの手順
 
-先にtoolingをcommit・確認し、固定後はsourceを変えません。
+先にtoolingをcommit・確認します。エディタやGitクライアントが切り替えない専用clone／worktreeを使い、
+両エージェント共通の完全なcommit SHAを選びます。以下の`REVISION_SHA`をそのSHAへ置き換えてください。
+initと毎回のrunnerに`--revision`を指定すると、独立したobject storeを持つ非公開のdetached cloneを
+一時作成し、元checkoutやrefを変更せず実行します。実行中のrunner／scorerの内容はそのrevisionと
+一致する必要があり、新しいtoolingで古いcampaignのrevisionを名乗ることはできません。
 リポジトリ外の新規ディレクトリを使い、生の回答・注記をcommitしません。
 
 ```sh
-make eval-score SCORE_ARGS="init --campaign /tmp/evidence-review-campaign --codex-model gpt-6.1-sol --claude-model claude-opus-5-5"
-make eval EVAL_ARGS="--case negative-go-format --case negative-optional-label --model gpt-6.1-sol --timeout 300 --execute --output-dir /tmp/evidence-review-codex-batch01"
+make eval-score SCORE_ARGS="init --revision REVISION_SHA --timeout 300 --campaign /tmp/evidence-review-campaign --codex-model gpt-6.1-sol --claude-model claude-opus-5-5"
+make eval EVAL_ARGS="--revision REVISION_SHA --case negative-go-format --case negative-optional-label --model gpt-6.1-sol --timeout 300 --execute --output-dir /tmp/evidence-review-codex-batch01"
 make eval-score SCORE_ARGS="import --campaign /tmp/evidence-review-campaign --summary /tmp/evidence-review-codex-batch01/summary.json --phase primary"
 make eval-score SCORE_ARGS="score --campaign /tmp/evidence-review-campaign"
 ```
+
+各batchは`--execute`なしで事前確認します。事前確認とcampaign初期化はmodelを呼び出しません。
+各sessionの前後でHEAD、入力の未コミット状態、fixture hash、package情報を確認します。
+変化があれば`input_integrity: failed`とし、影響した実行を`agent_error`にして停止します。
+回答が未完了・エラーでもbatchを停止し、準備段階の異常はsession開始前に停止します。
+importには検証済みの入力整合性と、timeout・入力方式を含む固定設定の完全一致が必要です。
+整合性情報のない古い集計やrevision混在の記録は履歴として保持し、置き換えcampaignには取り込みません。
+SHAや設定の書き換え、結果を見て固定条件を緩めることもしません。この手順の変更後は新しい共通revisionで
+両エージェントの全件を明示的に再評価します。内容hashだけでの固定と一括実行機能は今回実装しません。
 
 バッチごとに別の出力先を使います。基本評価は`EVALUATION_BATCHES.ja.md`に従い、日本語の負例を追加します。
 固定した反復6ケースは各1回実行し、取り込み時に`--phase repeat`を指定します。

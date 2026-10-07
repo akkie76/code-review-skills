@@ -27,7 +27,7 @@ Use the same clean source revision and fixture hash for both agents. Freeze
 explicit model IDs and installed package hashes before starting. The package
 hashes may differ by agent, but generated source hashes must agree. Each agent
 must retain the same CLI version and fixed permission protocol throughout the
-campaign. Record runtime availability, denied checks and isolation limitations
+campaign, including the timeout frozen at initialization. Record runtime availability, denied checks and isolation limitations
 in the local annotations and the sanitized report. Codex read-only can permit
 execution; Claude uses a static-only tool allowlist. The comparison is therefore
 between documented host configurations, not identical execution capabilities.
@@ -66,12 +66,17 @@ reconcile missing files with a sanitized manifest/trace before classifying a cla
 A strict case pass requires all required items, expected prefixes, the requested
 output type, a compliant output contract, no prohibited statement, and no
 unsupported finding or supporting claim. Prefix differences remain failures,
-even if the content was useful. Valid extra/optional comments do not penalize a
+even if the content was useful. Every required comment must use an expected prefix;
+an extra/optional comment cannot repair a required comment's prefix mismatch.
+The annotation `prefix` accepts only an exact `ACTION(Viewpoint)` token (or null
+for an embedded point), never prose or a local path. Valid extra/optional comments do not penalize a
 positive case. A negative case requires a meaningful answer with no finding,
 including unprefixed defect claims; regex `explicit_no_findings` is not a judge.
 
-Invocation evidence stays separate. Claude requires a confirmed `Skill` tool
-call; init-list presence alone is insufficient. Codex can currently observe only
+Invocation evidence stays separate. Claude requires a `Skill` tool request paired
+by ID with a successful `tool_result`; a request alone, an error, or init-list
+presence is insufficient. `call_requested` and `call_failed` are not confirmed
+invocations. Codex can currently observe only
 a Skill-file read. The campaign accepts `file_read_observed` as limited access
 evidence for scoring, **not confirmed invocation or causal proof**. Do not count
 an output with no observed Skill access as a Skill pass.
@@ -103,15 +108,33 @@ the workflow does not claim independence when the maintainer reviews it.
 
 ## Local workflow
 
-Commit and review the tooling first; no source changes after freezing. Use new
-directories outside the repository, and never commit raw files or annotations.
+Commit and review the tooling first. Use a dedicated clone/worktree that no editor
+or Git client switches, and select one full commit SHA for both agents. Replace
+`REVISION_SHA` below with that SHA. Both init and every runner invocation use
+`--revision`: this creates a private, detached local clone with an independent
+object store, without changing the original checkout or its refs. The executing
+runner/scorer bytes must match that revision; new tooling cannot run an old
+campaign under its old identity. Use new directories outside the repository,
+and never commit raw files or annotations.
 
 ```sh
-make eval-score SCORE_ARGS="init --campaign /tmp/evidence-review-campaign --codex-model gpt-6.1-sol --claude-model claude-opus-5-5"
-make eval EVAL_ARGS="--case negative-go-format --case negative-optional-label --model gpt-6.1-sol --timeout 300 --execute --output-dir /tmp/evidence-review-codex-batch01"
+make eval-score SCORE_ARGS="init --revision REVISION_SHA --timeout 300 --campaign /tmp/evidence-review-campaign --codex-model gpt-6.1-sol --claude-model claude-opus-5-5"
+make eval EVAL_ARGS="--revision REVISION_SHA --case negative-go-format --case negative-optional-label --model gpt-6.1-sol --timeout 300 --execute --output-dir /tmp/evidence-review-codex-batch01"
 make eval-score SCORE_ARGS="import --campaign /tmp/evidence-review-campaign --summary /tmp/evidence-review-codex-batch01/summary.json --phase primary"
 make eval-score SCORE_ARGS="score --campaign /tmp/evidence-review-campaign"
 ```
+
+Preview each batch without `--execute`; previews and campaign initialization make
+no model calls. The runner checks HEAD, input cleanliness, fixture hash and package
+metadata before and after every session. Drift produces `input_integrity: failed`,
+marks an affected run `agent_error`, and stops; an incomplete/error answer also
+stops the batch. Early setup failures stop before any session. Import requires
+verified integrity and identical frozen settings, including timeout and input mode.
+Legacy summaries without integrity metadata and mixed-revision records remain
+historical evidence, not inputs to the replacement campaign. Never rewrite their
+SHA/settings or relax the freeze rule after seeing results. Changes to this
+protocol require a new common revision and a full replacement campaign for both
+agents. Content-only freeze keys and a plan driver are not implemented here.
 
 Use a separate output directory for every batch. Follow `EVALUATION_BATCHES.md`
 for the primary pass, add the Japanese negative, then run the six frozen repeat

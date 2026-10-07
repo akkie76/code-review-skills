@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from collections import Counter
 from datetime import datetime, timezone
@@ -18,8 +19,12 @@ from pathlib import Path
 from tests import agent_eval
 
 
-PLAN = agent_eval.ROOT / "tests/EVALUATION_PLAN.json"
 AGENTS = ("codex", "claude")
+PREFIX_TOKEN = re.compile(r"(?:MUST|SHOULD|BETTER|NITS)\((?:Design|Simplicity|Naming|Style|Functionality|Test|Document)\)")
+
+
+def plan_path() -> Path:
+    return agent_eval.ROOT / "tests/EVALUATION_PLAN.json"
 
 
 def digest(value: object) -> str:
@@ -46,7 +51,7 @@ def outside(path: Path) -> Path:
 
 
 def campaign_plan() -> list[dict]:
-    policy = read_json(PLAN)
+    policy = read_json(plan_path())
     if policy["threshold_percent"] != 80 or policy["repeat_runs"] != 1:
         raise ValueError("unsupported evaluation policy")
     if policy["primary"] != "all_cases_auto_language_plus_negative_refactor_ja":
@@ -62,9 +67,11 @@ def campaign_plan() -> list[dict]:
     ]
 
 
-def init_campaign(destination: Path, models: dict[str, str]) -> dict:
+def init_campaign(destination: Path, models: dict[str, str], timeout: int = 300) -> dict:
     if set(models) != set(AGENTS) or any(not isinstance(value, str) or not value.strip() for value in models.values()):
         raise ValueError("explicit nonempty model IDs are required for both agents")
+    if type(timeout) is not int or timeout < 1:
+        raise ValueError("timeout must be a positive integer")
     if agent_eval.worktree_dirty(agent_eval.INPUT_PATHS) is not False:
         raise ValueError("commit evaluation inputs before freezing the campaign")
     revision = agent_eval.run_command(["git", "rev-parse", "HEAD"], agent_eval.ROOT)
@@ -72,9 +79,11 @@ def init_campaign(destination: Path, models: dict[str, str]) -> dict:
         raise ValueError("cannot identify evaluation revision")
     manifest = {
         "schema_version": 1, "created_at": datetime.now(timezone.utc).isoformat(),
-        "policy": read_json(PLAN), "source_revision": revision.stdout.strip(),
+        "policy": read_json(plan_path()), "source_revision": revision.stdout.strip(),
         "fixture_sha256": agent_eval.fixture_hash(), "models": models,
         "skills": {agent: agent_eval.package_metadata(agent_eval.skill_path(agent)) for agent in AGENTS},
+        "settings": {agent: agent_eval.run_settings(agent, timeout) for agent in AGENTS},
+        "input_source": "revision_snapshot" if agent_eval.SNAPSHOT_ACTIVE else "live_checkout",
         "runs": campaign_plan(),
     }
     if len({skill["source_sha256"] for skill in manifest["skills"].values()}) != 1:
@@ -111,11 +120,14 @@ def import_summary(directory: Path, summary_file: Path, phase: str) -> None:
         raise ValueError("a schema-2 runner summary for codex or claude is required")
     if summary.get("evaluation_inputs_dirty") is not False:
         raise ValueError("summary has dirty or unknown evaluation inputs")
+    if summary.get("input_integrity") != "verified":
+        raise ValueError("summary lacks verified per-run input integrity; retain legacy records separately")
     checks = {
         "skill_revision": manifest["source_revision"],
         "fixture_sha256": manifest["fixture_sha256"],
         "requested_model": manifest["models"][agent],
         "skill": manifest["skills"][agent], "invocation_mode": "implicit",
+        "input_source": manifest.get("input_source"),
     }
     for field, expected in checks.items():
         if summary.get(field) != expected:
@@ -123,16 +135,9 @@ def import_summary(directory: Path, summary_file: Path, phase: str) -> None:
     if not summary.get("agent_version") or summary["agent_version"] == "unavailable":
         raise ValueError("CLI version is required")
     settings = summary.get("settings", {})
-    required_settings = {
-        "sandbox": "read-only", "ephemeral": True,
-        "ignore_user_config": True, "approval_policy": "never",
-    } if agent == "codex" else {
-        "permissions": "fixed_static_allowlist", "permission_mode": "dontAsk",
-        "fixture_code_execution": False, "setting_sources": "project",
-        "strict_mcp_config": True, "session_persistence": False,
-    }
-    if any(settings.get(field) != value for field, value in required_settings.items()):
-        raise ValueError("unexpected permissions or invocation settings")
+    frozen_settings = manifest.get("settings", {}).get(agent)
+    if frozen_settings is None or digest(settings) != digest(frozen_settings):
+        raise ValueError("permissions or execution settings differ from frozen campaign")
     existing = {key(record): record for record in judgments["runs"]}
     if len(existing) != len(judgments["runs"]):
         raise ValueError("duplicate judgments")
@@ -208,8 +213,13 @@ def assess(record: dict, expected: dict) -> dict:
         raise ValueError("finding IDs must be distinct nonempty strings")
     matched: set[int] = set()
     prefixes: set[str] = set()
+    required_prefixes: set[str] = set()
+    prefix_mismatches = 0
     counts: Counter = Counter()
     for finding in findings:
+        prefix = finding.get("prefix")
+        if prefix is not None and (not isinstance(prefix, str) or not PREFIX_TOKEN.fullmatch(prefix)):
+            raise ValueError("prefix must be an exact action/viewpoint token or null")
         kind = finding["kind"]
         if kind not in {"required", "optional", "valid_additional", "duplicate", "unsupported", "ambiguous"}:
             raise ValueError("unknown finding classification")
@@ -218,6 +228,11 @@ def assess(record: dict, expected: dict) -> dict:
         required = indices(finding.get("expected_indices", []), len(expected["must_report"]))
         if (kind == "required" and not required) or (kind != "required" and required):
             raise ValueError("only required findings may match required expectation indices")
+        if kind == "required":
+            if prefix not in expected["prefixes"]:
+                prefix_mismatches += 1
+            else:
+                required_prefixes.add(prefix)
         if kind == "optional":
             if not indices(finding.get("optional_indices", []), len(expected.get("may_report", []))):
                 raise ValueError("optional finding must map to may_report")
@@ -245,7 +260,7 @@ def assess(record: dict, expected: dict) -> dict:
         accessed and judgment["output_contract_satisfied"] and not forbidden
         and not counts["unsupported"] and not unsupported_claims
         and len(matched) == len(expected["must_report"])
-        and set(expected["prefixes"]).issubset(prefixes)
+        and not prefix_mismatches and set(expected["prefixes"]).issubset(required_prefixes)
         and (no_findings if expected["output"] == "no_findings" else bool(findings) and not no_findings)
     )
     return {
@@ -254,6 +269,7 @@ def assess(record: dict, expected: dict) -> dict:
         "unsupported_findings": counts["unsupported"], "unsupported_supporting_claims": unsupported_claims,
         "valid_additional": counts["valid_additional"], "optional": counts["optional"],
         "duplicates": sum(finding["kind"] == "duplicate" for finding in findings),
+        "required_prefix_mismatches": prefix_mismatches,
         "forbidden_matches": len(forbidden), "prefixes": sorted(prefixes),
         "skill_evidence": evidence,
     }
@@ -277,7 +293,8 @@ def aggregate(directory: Path) -> dict:
                             "case_id": identity[2], "language": identity[3], **assessment})
     agents = {}
     count_fields = ("required_detected", "required_missed", "unsupported_findings",
-                    "unsupported_supporting_claims", "valid_additional", "optional", "duplicates", "forbidden_matches")
+                    "unsupported_supporting_claims", "valid_additional", "optional", "duplicates", "forbidden_matches",
+                    "required_prefix_mismatches")
     for agent in AGENTS:
         primary = [run for run in evaluations if run["agent"] == agent and run["phase"] == "primary"]
         repeat = [run for run in evaluations if run["agent"] == agent and run["phase"] == "repeat"]
@@ -323,6 +340,8 @@ def main(argv: list[str] | None = None) -> int:
     init.add_argument("--campaign", type=Path, required=True)
     init.add_argument("--codex-model", required=True)
     init.add_argument("--claude-model", required=True)
+    init.add_argument("--timeout", type=int, default=300, help="Freeze this per-run timeout for both agents")
+    init.add_argument("--revision", help="Freeze inputs from a private snapshot of this commit/ref")
     ingest = commands.add_parser("import", help="Import traces and initialize unreviewed annotations")
     ingest.add_argument("--campaign", type=Path, required=True)
     ingest.add_argument("--summary", type=Path, required=True)
@@ -332,7 +351,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "init":
-            manifest = init_campaign(args.campaign, {"codex": args.codex_model, "claude": args.claude_model})
+            models = {"codex": args.codex_model, "claude": args.claude_model}
+            if args.revision:
+                with agent_eval.revision_snapshot(args.revision):
+                    manifest = init_campaign(args.campaign, models, args.timeout)
+            else:
+                manifest = init_campaign(args.campaign, models, args.timeout)
             print(f"Frozen {len(manifest['runs'])} runs per agent; threshold 80 points.")
         elif args.command == "import":
             import_summary(args.campaign, args.summary, args.phase)
@@ -344,7 +368,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{agent}: {result['primary_passes']}/{result['primary_planned']}, "
                       f"score={result['primary_score']}, complete={result['complete']}")
             return 0 if report["accepted"] else 1
-    except (OSError, ValueError, KeyError, TypeError) as error:
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
     return 0

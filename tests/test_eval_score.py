@@ -8,6 +8,8 @@ import json
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -29,6 +31,8 @@ class EvaluationScoreTests(unittest.TestCase):
             "schema_version": 1, "source_revision": "c" * 40, "fixture_sha256": "d" * 64,
             "models": {"codex": "codex-model", "claude": "claude-model"},
             "skills": {agent: SKILL for agent in eval_score.AGENTS},
+            "settings": {agent: agent_eval.run_settings(agent, 300) for agent in eval_score.AGENTS},
+            "input_source": "live_checkout",
             "policy": {"threshold_percent": 80},
             "runs": [{"phase": "primary", "case_id": f"case-{i}", "language": "en",
                       "expectations": EXPECTED} for i in range(5)] + [
@@ -142,6 +146,38 @@ class EvaluationScoreTests(unittest.TestCase):
         self.assertEqual(result["optional"], 1)
         self.assertEqual(result["duplicates"], 1)
 
+    def test_unrelated_finding_cannot_heal_required_prefix_mismatch(self) -> None:
+        record = self.record()
+        record["judgment"]["findings"][0]["prefix"] = "SHOULD(Functionality)"
+        record["judgment"]["findings"].append({
+            "id": "extra", "kind": "valid_additional", "prefix": "MUST(Functionality)",
+            "evidence_note": "An independent, valid defect on a different path.",
+        })
+        result = eval_score.assess(record, EXPECTED)
+        self.assertEqual(result["outcome"], "fail")
+        self.assertEqual(result["required_detected"], 1)
+        self.assertEqual(result["required_prefix_mismatches"], 1)
+
+    def test_one_required_comment_cannot_hide_another_wrong_prefix(self) -> None:
+        expected = copy.deepcopy(EXPECTED)
+        expected["must_report"].append("A second independent required defect.")
+        record = self.record()
+        record["judgment"]["findings"].append({
+            "id": "second", "kind": "required", "expected_indices": [1],
+            "prefix": "SHOULD(Functionality)", "evidence_note": "Second required defect.",
+        })
+        self.assertEqual(eval_score.assess(record, expected)["outcome"], "fail")
+
+    def test_prefix_prose_paths_and_invalid_tokens_are_rejected(self) -> None:
+        for prefix in ("MUST(Functionality): private prose", "/private/company/file.py", "P1(Functionality)"):
+            record = self.record()
+            record["judgment"]["findings"].append({
+                "id": "extra", "kind": "valid_additional", "prefix": prefix,
+                "evidence_note": "A valid additional issue, with a malformed annotation field.",
+            })
+            with self.subTest(prefix=prefix), self.assertRaisesRegex(ValueError, "exact action/viewpoint"):
+                eval_score.assess(record, EXPECTED)
+
     def test_unsupported_supporting_claim_fails_without_becoming_formal_false_positive(self) -> None:
         record = self.record()
         record["judgment"]["supporting_claims"] = [{"kind": "unsupported", "evidence_note": "No claimed caller exists."}]
@@ -197,7 +233,8 @@ class EvaluationScoreTests(unittest.TestCase):
             "evaluation_inputs_dirty": False, "skill_revision": self.manifest["source_revision"],
             "fixture_sha256": self.manifest["fixture_sha256"], "requested_model": "codex-model",
             "skill": SKILL, "invocation_mode": "implicit",
-            "settings": {"sandbox": "read-only", "ephemeral": True, "ignore_user_config": True, "approval_policy": "never"},
+            "input_integrity": "verified", "input_source": "live_checkout",
+            "settings": agent_eval.run_settings("codex", 300),
             "results": [{"case_id": "case-0", "language": "en", "run_number": 1,
                          "requested_model": "codex-model", "observed_model": None, "skill": SKILL,
                          "status": "completed", "exit_code": 0, "skill_evidence": "file_read_observed",
@@ -226,6 +263,21 @@ class EvaluationScoreTests(unittest.TestCase):
                 eval_score.import_summary(self.directory, path, "primary")
             self.assertEqual(eval_score.load_campaign(self.directory)[1]["runs"], [])
 
+    def test_import_rejects_timeout_drift_and_failed_input_integrity(self) -> None:
+        path, original = self.summary()
+        for field in ("timeout", "integrity", "snapshot"):
+            summary = copy.deepcopy(original)
+            if field == "timeout":
+                summary["settings"]["timeout_seconds"] = 1800
+            elif field == "integrity":
+                summary["input_integrity"] = "failed"
+            else:
+                summary["input_source"] = "revision_snapshot"
+            eval_score.write_json(path, summary)
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                eval_score.import_summary(self.directory, path, "primary")
+            self.assertEqual(eval_score.load_campaign(self.directory)[1]["runs"], [])
+
     def test_aggregate_has_no_annotation_prose_paths_or_reviewer_names(self) -> None:
         self.complete()
         self.save()
@@ -249,7 +301,8 @@ class ClaudeEvaluationTests(unittest.TestCase):
         original = agent_eval.run_command
         events = "\n".join(json.dumps(event) for event in [
             {"type": "system", "subtype": "init", "model": "claude-model"},
-            {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "evidence-code-review"}}]}},
+            {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "skill-1", "name": "Skill", "input": {"skill": "evidence-code-review"}}]}},
+            {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "skill-1", "content": "Skill loaded."}]}},
             {"type": "result", "subtype": "success", "result": "No actionable findings.", "usage": {"input_tokens": 12}, "total_cost_usd": 0.1},
         ])
 
@@ -279,7 +332,8 @@ class ClaudeEvaluationTests(unittest.TestCase):
         self.assertEqual(observed["model"], "claude-model")
 
     def test_stream_captures_skill_call_answer_usage_and_cost(self) -> None:
-        events = [{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "evidence-code-review"}}]}},
+        events = [{"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "skill-1", "name": "Skill", "input": {"skill": "evidence-code-review"}}]}},
+                  {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "skill-1", "content": "Skill loaded."}]}},
                   {"type": "result", "subtype": "success", "result": "No findings.", "usage": {"input_tokens": 12}, "total_cost_usd": 0.1}]
         observed = agent_eval.claude_result("\n".join(json.dumps(event) for event in events))
         self.assertTrue(observed["invoked"])
@@ -287,6 +341,134 @@ class ClaudeEvaluationTests(unittest.TestCase):
         self.assertEqual(observed["answer"], "No findings.")
         self.assertEqual(observed["usage"], {"input_tokens": 12})
         self.assertEqual(observed["cost"], 0.1)
+
+    def test_failed_or_unanswered_skill_call_is_not_confirmed(self) -> None:
+        request = {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "skill-1", "name": "Skill", "input": {"skill": "evidence-code-review"}}]}}
+        complete = {"type": "result", "subtype": "success", "result": "No findings."}
+        failed = {"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "skill-1", "is_error": True, "content": "Unknown skill."}]}}
+        for messages, expected in (([request, complete], "call_requested"), ([request, failed, complete], "call_failed")):
+            observed = agent_eval.claude_result("\n".join(json.dumps(message) for message in messages))
+            self.assertTrue(observed["completed"])
+            self.assertFalse(observed["invoked"])
+            self.assertEqual(observed["skill_evidence"], expected)
+
+
+    def test_unrelated_tool_result_cannot_confirm_skill_request(self) -> None:
+        events = [
+            {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "skill-1",
+             "name": "Skill", "input": {"skill": "evidence-code-review"}}]}},
+            {"type": "user", "message": {"content": [{"type": "tool_result",
+             "tool_use_id": "other-tool", "content": "Success"}]}},
+        ]
+        observed = agent_eval.claude_result("\n".join(json.dumps(event) for event in events))
+        self.assertFalse(observed["invoked"])
+        self.assertEqual(observed["skill_evidence"], "call_requested")
+
+
+class InputIsolationTests(unittest.TestCase):
+    def test_snapshot_rejects_different_executing_tooling(self) -> None:
+        with patch.object(agent_eval, "LOADED_TOOL_HASHES", {"tests/agent_eval.py": "different"}):
+            with self.assertRaisesRegex(RuntimeError, "tooling differs"):
+                with agent_eval.revision_snapshot("HEAD"):
+                    self.fail("mismatched tooling must never execute")
+
+    def test_snapshot_ignores_original_checkout_changes_and_restores_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            source.mkdir()
+            commands = [["git", "init", "-q"], ["git", "add", "-A"]]
+            tooling = {}
+            for name in agent_eval.TOOL_PATHS:
+                path = source / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("test tooling\n", encoding="utf-8")
+                tooling[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+            payload = source / "payload.txt"
+            payload.write_text("frozen", encoding="utf-8")
+            for command in commands:
+                subprocess.run(command, cwd=source, check=True, capture_output=True)
+            commit_command = ["git", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgSign=false",
+                              "-c", "user.name=Developer", "-c", "user.email=dev@example.invalid",
+                              "commit", "-qm", "baseline"]
+            subprocess.run(commit_command, cwd=source, check=True, capture_output=True)
+            revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
+            with patch.object(agent_eval, "ROOT", source), patch.object(agent_eval, "LOADED_TOOL_HASHES", tooling):
+                with agent_eval.revision_snapshot(revision):
+                    snapshot = agent_eval.ROOT
+                    payload.write_text("external editor change", encoding="utf-8")
+                    subprocess.run(["git", "add", "payload.txt"], cwd=source, check=True, capture_output=True)
+                    subprocess.run(commit_command, cwd=source, check=True, capture_output=True)
+                    self.assertEqual((snapshot / "payload.txt").read_text(), "frozen")
+                    self.assertEqual(subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=snapshot, text=True).strip(), revision)
+                    self.assertTrue(agent_eval.SNAPSHOT_ACTIVE)
+                    self.assertFalse((snapshot / ".git/objects/info/alternates").exists())
+                    with self.assertRaisesRegex(ValueError, "outside this repository"):
+                        agent_eval.output_directory(source / "raw-results")
+                self.assertEqual(agent_eval.ROOT, source)
+                self.assertFalse(agent_eval.SNAPSHOT_ACTIVE)
+                self.assertFalse(snapshot.exists())
+            self.assertEqual(payload.read_text(), "external editor change")
+
+    def test_input_change_before_run_never_calls_agent(self) -> None:
+        state = {"revision": "r1", "inputs_dirty": False, "fixture_sha256": "f", "skill": SKILL}
+        changed = {**state, "inputs_dirty": True}
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(agent_eval, "evaluation_state", side_effect=[state, state, state, state, changed]), \
+             patch.object(agent_eval, "evaluate_one") as evaluate, \
+             patch.object(agent_eval.shutil, "which", return_value="codex"), \
+             patch.object(agent_eval, "worktree_dirty", return_value=False), \
+             patch.object(agent_eval, "run_command", return_value=subprocess.CompletedProcess([], 0, "test", "")), \
+             redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            target = Path(directory) / "results"
+            self.assertEqual(agent_eval.main(["--case", "negative-refactor", "--execute", "--output-dir", str(target)]), 1)
+            evaluate.assert_not_called()
+            self.assertEqual(json.loads((target / "summary.json").read_text())["input_integrity"], "failed")
+
+    def test_fixture_hash_ignores_bytecode_but_detects_source_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.object(agent_eval, "CASES", Path(directory)):
+            source = Path(directory) / "source.py"
+            source.write_text("original", encoding="utf-8")
+            before = agent_eval.fixture_hash()
+            cache = Path(directory) / "__pycache__"
+            cache.mkdir()
+            (cache / "source.pyc").write_bytes(b"cache")
+            self.assertEqual(agent_eval.fixture_hash(), before)
+            source.write_text("changed", encoding="utf-8")
+            self.assertNotEqual(agent_eval.fixture_hash(), before)
+
+    def test_input_state_change_after_run_is_recorded_and_stops(self) -> None:
+        state = {"revision": "r1", "inputs_dirty": False, "fixture_sha256": "f", "skill": SKILL}
+        changed = {**state, "revision": "r2"}
+        answer = {"status": "completed", "exit_code": 0, "skill": SKILL, "observed_model": None}
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(agent_eval, "evaluation_state", side_effect=[state, state, state, state, state, changed]), \
+             patch.object(agent_eval, "evaluate_one", return_value=answer) as evaluate, \
+             patch.object(agent_eval.shutil, "which", return_value="codex"), \
+             patch.object(agent_eval, "worktree_dirty", return_value=False), \
+             patch.object(agent_eval, "run_command", return_value=subprocess.CompletedProcess([], 0, "test", "")), \
+             redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            target = Path(directory) / "results"
+            self.assertEqual(agent_eval.main(["--case", "negative-refactor", "--runs", "2",
+                                              "--execute", "--output-dir", str(target)]), 1)
+            summary = json.loads((target / "summary.json").read_text())
+            self.assertEqual(summary["input_integrity"], "failed")
+            self.assertEqual(summary["results"][0]["status"], "agent_error")
+            evaluate.assert_called_once()
+
+    def test_incomplete_run_stops_without_starting_next_case(self) -> None:
+        state = {"revision": "r1", "inputs_dirty": False, "fixture_sha256": "f", "skill": SKILL}
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(agent_eval, "evaluation_state", return_value=state), \
+             patch.object(agent_eval, "evaluate_one", return_value={"status": "no_answer", "observed_model": None}) as evaluate, \
+             patch.object(agent_eval.shutil, "which", return_value="codex"), \
+             patch.object(agent_eval, "worktree_dirty", return_value=False), \
+             patch.object(agent_eval, "run_command", return_value=subprocess.CompletedProcess([], 0, "test", "")), \
+             redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            self.assertEqual(agent_eval.main(["--case", "negative-refactor", "--runs", "2", "--execute",
+                                              "--output-dir", str(Path(directory) / "results")]), 1)
+            evaluate.assert_called_once()
 
     def test_claude_command_uses_static_permissions_without_bypass(self) -> None:
         command = agent_eval.agent_command("claude", Path("repo"), Path("answer.txt"), "Review the diff.", "claude-model")

@@ -13,7 +13,7 @@
 - Request language:
 - Fresh session: yes / no
 - Invocation mode: implicit / explicit
-- Invocation evidence: confirmed / by_construction / file_read_observed / not_observed
+- Invocation evidence: confirmed / call_requested / call_failed / by_construction / file_read_observed / not_observed
 - Skill invoked: yes / no / not verified
 - Tool permissions / fixture-code execution allowed:
 - Denied verification attempts / isolation limitations:

@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -27,6 +28,77 @@ INPUT_PATHS = [
     "tests/eval_score.py", "tests/EVALUATION_PLAN.json",
     "tests/EVALUATION_RUBRIC.md", "tests/EVALUATION_RUBRIC.ja.md",
 ]
+TOOL_PATHS = ("tests/agent_eval.py", "tests/eval_score.py")
+SNAPSHOT_ACTIVE = False
+OUTPUT_REPOSITORY_ROOTS: tuple[Path, ...] = ()
+LOADED_TOOL_HASHES = {
+    name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in TOOL_PATHS
+}
+
+
+@contextmanager
+def revision_snapshot(revision: str):
+    """Private local clone: no shared object store, original ref or worktree writes."""
+    global ROOT, CASES, SKILL, SNAPSHOT_ACTIVE, OUTPUT_REPOSITORY_ROOTS
+    original = (ROOT, CASES, SKILL)
+    previous_snapshot, previous_outputs = SNAPSHOT_ACTIVE, OUTPUT_REPOSITORY_ROOTS
+    resolved = run_command(["git", "rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}"], ROOT)
+    if resolved.returncode:
+        raise RuntimeError("cannot resolve evaluation revision")
+    commit = resolved.stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40,64}", commit):
+        raise RuntimeError("resolved evaluation revision is not a commit hash")
+    with tempfile.TemporaryDirectory(prefix="review-inputs-") as directory:
+        snapshot = Path(directory) / "repository"
+        commands = [
+            ["git", "-c", "core.hooksPath=/dev/null", "clone", "--quiet", "--no-local",
+             "--no-checkout", str(ROOT), str(snapshot)],
+            ["git", "-c", "core.hooksPath=/dev/null", "-C", str(snapshot),
+             "fetch", "--quiet", "--no-tags", str(ROOT), commit],
+            ["git", "-c", "core.hooksPath=/dev/null", "-C", str(snapshot),
+             "checkout", "--quiet", "--detach", commit],
+        ]
+        for command in commands:
+            result = run_command(command, original[0], timeout=60)
+            if result.returncode:
+                raise RuntimeError("cannot create isolated evaluation snapshot")
+        for name, expected in LOADED_TOOL_HASHES.items():
+            path = snapshot / name
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                raise RuntimeError("snapshot tooling differs from executing tooling; use a new common revision")
+        try:
+            ROOT, CASES, SKILL = snapshot, snapshot / "tests/cases", snapshot / "dist/codex/evidence-code-review"
+            SNAPSHOT_ACTIVE = True
+            OUTPUT_REPOSITORY_ROOTS = (*previous_outputs, original[0])
+            yield commit
+        finally:
+            ROOT, CASES, SKILL = original
+            SNAPSHOT_ACTIVE, OUTPUT_REPOSITORY_ROOTS = previous_snapshot, previous_outputs
+
+
+def run_settings(agent: str, timeout: int) -> dict:
+    if agent == "codex":
+        return {"sandbox": "read-only", "ephemeral": True, "ignore_user_config": True,
+                "approval_policy": "never", "timeout_seconds": timeout}
+    return {"permissions": "fixed_static_allowlist", "permission_mode": "dontAsk",
+            "fixture_code_execution": False, "setting_sources": "project",
+            "strict_mcp_config": True, "session_persistence": False,
+            "isolation_limitations": "User Skills/memory and managed settings may remain visible.",
+            "timeout_seconds": timeout}
+
+
+def evaluation_state(agent: str) -> dict:
+    revision = run_command(["git", "rev-parse", "HEAD"], ROOT)
+    if revision.returncode:
+        raise RuntimeError("cannot identify evaluation revision")
+    return {"revision": revision.stdout.strip(), "inputs_dirty": worktree_dirty(INPUT_PATHS),
+            "fixture_sha256": fixture_hash(), "skill": package_metadata(skill_path(agent))}
+
+
+def verify_evaluation_state(expected: dict, agent: str) -> None:
+    current = evaluation_state(agent)
+    if expected["inputs_dirty"] is not False or current != expected:
+        raise RuntimeError("evaluation revision or inputs changed; stop and retain this campaign")
 
 
 def skill_path(agent: str) -> Path:
@@ -35,7 +107,8 @@ def skill_path(agent: str) -> Path:
 
 def fixture_hash() -> str:
     digest = hashlib.sha256()
-    for path in sorted(path for path in CASES.rglob("*") if path.is_file()):
+    for path in sorted(path for path in CASES.rglob("*") if path.is_file()
+                       and "__pycache__" not in path.parts and path.suffix not in {".pyc", ".pyo"}):
         digest.update(path.relative_to(CASES).as_posix().encode("utf-8"))
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
@@ -218,6 +291,9 @@ def claude_result(events: str) -> dict:
     """Extract observable metadata; installed Skills alone do not prove invocation."""
     result = {"answer": "", "model": None, "usage": None, "cost": None,
               "invoked": False, "completed": False}
+    requests: set[str] = set()
+    successes: set[str] = set()
+    failures: set[str] = set()
     for line in events.splitlines():
         try:
             event = json.loads(line)
@@ -227,20 +303,32 @@ def claude_result(events: str) -> dict:
             continue
         if event.get("type") == "system" and event.get("subtype") == "init":
             result["model"] = event.get("model") or None
-        if event.get("type") == "assistant":
+        if event.get("type") in {"assistant", "user"}:
             message = event.get("message", {})
             for block in message.get("content", []) if isinstance(message, dict) else []:
                 if not isinstance(block, dict):
                     continue
                 if block.get("type") == "tool_use" and block.get("name") == "Skill":
                     inputs = block.get("input", {})
-                    if isinstance(inputs, dict) and inputs.get("skill") == "evidence-code-review":
-                        result["invoked"] = True
+                    identifier = block.get("id")
+                    if (event["type"] == "assistant" and isinstance(inputs, dict)
+                            and inputs.get("skill") == "evidence-code-review"
+                            and isinstance(identifier, str) and identifier):
+                        requests.add(identifier)
+                if block.get("type") == "tool_result" and block.get("tool_use_id") in requests:
+                    if block.get("is_error") is True:
+                        failures.add(block["tool_use_id"])
+                    elif block.get("is_error", False) is False:
+                        successes.add(block["tool_use_id"])
         if event.get("type") == "result":
             result["completed"] = event.get("subtype") == "success" and not event.get("is_error", False)
             result["answer"] = event.get("result") if isinstance(event.get("result"), str) else ""
             result["usage"] = event.get("usage")
             result["cost"] = event.get("total_cost_usd")
+    result["invoked"] = bool(successes - failures)
+    result["skill_evidence"] = "confirmed" if result["invoked"] else (
+        "call_failed" if failures else "call_requested" if requests else "not_observed"
+    )
     return result
 
 
@@ -307,9 +395,7 @@ def evaluate_one(
         }
         read_observed = skill_file_read_observed(events, skill_text)
         completed = exit_code == 0 and bool(answer.strip()) and (claude is None or claude["completed"])
-        evidence = ("file_read_observed" if read_observed else "not_observed") if claude is None else (
-            "confirmed" if claude["invoked"] else "not_observed"
-        )
+        evidence = ("file_read_observed" if read_observed else "not_observed") if claude is None else claude["skill_evidence"]
         return {
             "case_id": case["id"],
             "language": language,
@@ -334,11 +420,11 @@ def evaluate_one(
 
 
 def output_directory(requested: Path | None) -> Path:
-    repository = ROOT.resolve()
+    repositories = [path.resolve() for path in (ROOT, *OUTPUT_REPOSITORY_ROOTS)]
 
     def outside_repository(path: Path) -> Path:
         resolved = path.expanduser().resolve()
-        if resolved == repository or repository in resolved.parents:
+        if any(resolved == repository or repository in resolved.parents for repository in repositories):
             raise ValueError("evaluation output must be outside this repository")
         return resolved
 
@@ -365,6 +451,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runs", type=int, default=1, help="Fresh runs per selected case")
     parser.add_argument("--model", help="Explicit agent model; otherwise use the CLI default")
     parser.add_argument("--agent", choices=("codex", "claude"), default="codex")
+    parser.add_argument("--revision", help="Exact commit/ref to export into a private isolated snapshot")
     parser.add_argument("--timeout", type=int, default=600, help="Seconds per run")
     parser.add_argument("--output-dir", type=Path, help="New local directory outside the repository")
     parser.add_argument("--execute", action="store_true", help="Confirm that model calls may consume tokens")
@@ -372,8 +459,23 @@ def main(argv: list[str] | None = None) -> int:
     if args.runs < 1 or args.timeout < 1:
         parser.error("--runs and --timeout must be positive")
     try:
+        if args.revision:
+            with revision_snapshot(args.revision):
+                return run_evaluation(args, parser)
+        return run_evaluation(args, parser)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+        parser.error(str(error))
+
+
+def run_evaluation(args, parser) -> int:
+    try:
+        state = evaluation_state(args.agent) if args.execute else None
+        if state is not None:
+            verify_evaluation_state(state, args.agent)
         cases = selected_cases(args.case, args.all, args.language)
-    except (OSError, KeyError, ValueError) as error:
+        if state is not None:
+            verify_evaluation_state(state, args.agent)
+    except (OSError, KeyError, ValueError, RuntimeError) as error:
         parser.error(str(error))
     if not args.execute:
         print(f"Planned {len(cases) * args.runs} {args.agent} run(s) across {len(cases)} case(s).")
@@ -388,11 +490,10 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError) as error:
         parser.error(str(error))
     version = run_command([args.agent, "--version"], ROOT)
-    revision = run_command(["git", "rev-parse", "HEAD"], ROOT)
     try:
-        skill = package_metadata(skill_path(args.agent))
-    except OSError as error:
-        parser.error(f"cannot read generated Skill metadata: {error}")
+        verify_evaluation_state(state, args.agent)
+    except (OSError, RuntimeError) as error:
+        parser.error(str(error))
     report = {
         "schema_version": 2,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -403,20 +504,15 @@ def main(argv: list[str] | None = None) -> int:
         "requested_model": args.model,
         "observed_models": [],
         "cost": "unavailable",
-        "skill_revision": revision.stdout.strip() if revision.returncode == 0 else "unavailable",
+        "skill_revision": state["revision"],
         "worktree_dirty": worktree_dirty(),
-        "evaluation_inputs_dirty": worktree_dirty(INPUT_PATHS),
-        "fixture_sha256": fixture_hash(),
-        "skill": skill,
+        "evaluation_inputs_dirty": state["inputs_dirty"],
+        "fixture_sha256": state["fixture_sha256"],
+        "skill": state["skill"],
+        "input_integrity": "verified",
+        "input_source": "revision_snapshot" if args.revision else "live_checkout",
         "invocation_mode": "implicit",
-        "settings": {"sandbox": "read-only", "ephemeral": True, "ignore_user_config": True,
-                     "approval_policy": "never", "timeout_seconds": args.timeout} if args.agent == "codex" else {
-                         "permissions": "fixed_static_allowlist", "permission_mode": "dontAsk",
-                         "fixture_code_execution": False, "setting_sources": "project",
-                         "strict_mcp_config": True, "session_persistence": False,
-                         "isolation_limitations": "User Skills/memory and managed settings may remain visible.",
-                         "timeout_seconds": args.timeout,
-                     },
+        "settings": run_settings(args.agent, args.timeout),
         "selected_cases": [case["id"] for _, case, _, _ in cases],
         "requested_runs_per_case": args.runs,
         "results": [],
@@ -429,11 +525,21 @@ def main(argv: list[str] | None = None) -> int:
     try:
         for case_dir, case, prompt, case_language in cases:
             for run_number in range(1, args.runs + 1):
+                verify_evaluation_state(state, args.agent)
                 print(f"Evaluating {case['id']} ({case_language}, run {run_number}/{args.runs})", flush=True)
-                report["results"].append(evaluate_one(
+                result = evaluate_one(
                     case_dir, case, prompt, case_language, run_number,
                     destination, args.model, args.timeout, args.agent,
-                ))
+                )
+                report["results"].append(result)
+                try:
+                    verify_evaluation_state(state, args.agent)
+                    if result.get("skill", state["skill"]) != state["skill"]:
+                        raise RuntimeError("copied Skill differs from frozen input")
+                except (OSError, RuntimeError) as error:
+                    result["status"] = "agent_error"
+                    result["error"] = str(error)
+                    raise RuntimeError(str(error)) from error
                 observed_models = sorted({
                     item["observed_model"] for item in report["results"]
                     if item.get("observed_model")
@@ -445,7 +551,15 @@ def main(argv: list[str] | None = None) -> int:
                 (destination / "summary.json").write_text(
                     json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
                 )
+                if result["status"] != "completed":
+                    print("ERROR: incomplete agent run; stopping this invocation", file=sys.stderr)
+                    return 1
     except (OSError, RuntimeError) as error:
+        report["input_integrity"] = "failed"
+        report["abort_reason"] = str(error)
+        (destination / "summary.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
         print(f"ERROR: {error}", file=sys.stderr)
         print(f"Local evaluation files: {destination}", file=sys.stderr)
         return 1

@@ -8,7 +8,7 @@ import os
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -181,7 +181,7 @@ class AgentEvaluationTests(unittest.TestCase):
                      patch.object(agent_eval.shutil, "which", return_value="codex"), \
                      patch.object(agent_eval, "worktree_dirty", return_value=False), \
                      patch.object(agent_eval, "run_command", return_value=subprocess.CompletedProcess([], 0, "test", "")), \
-                     redirect_stdout(StringIO()):
+                     redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                     self.assertEqual(agent_eval.main([
                         "--case", "negative-refactor", "--execute", "--output-dir", str(destination),
                     ]), expected_exit)

@@ -162,7 +162,7 @@ Skill起動を観測できなかった回だけ、必要に応じて`/evidence-c
 
 | エージェント・方式 | 根拠 | 記録する値 |
 | --- | --- | --- |
-| Claude・implicit | `input.skill == "evidence-code-review"`の`Skill` tool呼び出し | `confirmed`。なければ`not_observed` |
+| Claude・implicit | `evidence-code-review`への`Skill`要求と、同じIDに対応する成功した`tool_result` | `confirmed`。要求のみ：`call_requested`、失敗結果：`call_failed`、観測なし：`not_observed` |
 | Claude・explicit | 明示コマンドに加え、initイベントの`skills`一覧に存在 | `by_construction`。起動を直接観測したものではない |
 | Codex | CLI記録上のSkillファイル読み取り | `file_read_observed`。起動は`not_verified`のまま |
 

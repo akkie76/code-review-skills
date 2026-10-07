@@ -13,7 +13,7 @@
 - 依頼言語：
 - 新規session：yes / no
 - 呼び出し方式：implicit / explicit
-- 起動の根拠：confirmed / by_construction / file_read_observed / not_observed
+- 起動の根拠：confirmed / call_requested / call_failed / by_construction / file_read_observed / not_observed
 - Skill呼び出し：yes / no / 未確認
 - tool権限 / fixtureコードの実行を許可したか：
 - 拒否された検証の試行 / 環境隔離の制約：

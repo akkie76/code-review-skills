@@ -29,10 +29,15 @@ the four groups or all 28 fixtures in parallel.
 For example, the first batch can be previewed without a model call:
 
 ```sh
-make eval EVAL_ARGS="--case negative-go-format --case negative-optional-label --runs 1"
+make eval EVAL_ARGS="--revision REVISION_SHA --case negative-go-format --case negative-optional-label --runs 1"
 ```
 
-After choosing a supported model, add `--model MODEL_ID --execute` to that
+Use a dedicated clone/worktree not switched by editors or Git clients. Replace
+`REVISION_SHA` with the full common commit from campaign initialization; use
+`--revision` for every batch. Do not reuse historical campaigns after tooling
+changes. The snapshot and per-session checks stop revision/input drift.
+
+After choosing a supported model, add `--model MODEL_ID --timeout 300 --execute` to that
 command. Replace `MODEL_ID` with the actual CLI model identifier; do not run
 the placeholder verbatim. The runner prints the local output directory after
 execution. Review its `summary.json`, each `answer.txt`, and the relevant
