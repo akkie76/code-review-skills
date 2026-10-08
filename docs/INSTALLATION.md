@@ -5,6 +5,15 @@
 Install the complete `evidence-code-review` directory. The package includes
 references required by `SKILL.md`.
 
+For the `v1.0.0` release, fetch the exact release tag before copying a package:
+
+```sh
+git clone --depth 1 --branch v1.0.0 https://github.com/akkie76/code-review-skills.git
+```
+
+The commands below assume the repository is checked out at
+`code-review-skills/`. Review the package before installing it.
+
 ## Choose a scope
 
 - Personal installation loads the Skill for projects on the current machine.

@@ -4,8 +4,9 @@
 
 ## Supported versions
 
-Until the first stable release, only the latest commit on the default branch
-is considered for security fixes.
+Security reports are assessed against the latest stable release. Fixes for
+older versions are not guaranteed; update to the latest release before
+reporting when possible.
 
 ## Reporting a vulnerability
 
