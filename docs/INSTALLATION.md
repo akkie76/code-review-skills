@@ -9,10 +9,10 @@ For the `v1.0.0` release, fetch the exact release tag before copying a package:
 
 ```sh
 git clone --depth 1 --branch v1.0.0 https://github.com/akkie76/code-review-skills.git
+cd code-review-skills
 ```
 
-The commands below assume the repository is checked out at
-`code-review-skills/`. Review the package before installing it.
+Review the package before installing it.
 
 ## Choose a scope
 

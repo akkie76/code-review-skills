@@ -20,13 +20,14 @@ Clone the release tag so the installed package has a known version:
 
 ```sh
 git clone --depth 1 --branch v1.0.0 https://github.com/akkie76/code-review-skills.git
+cd code-review-skills
 ```
 
 ### Codex
 
 ```sh
 mkdir -p ~/.codex/skills
-cp -R code-review-skills/dist/codex/evidence-code-review ~/.codex/skills/
+cp -R dist/codex/evidence-code-review ~/.codex/skills/
 ```
 
 Then start a new Codex task and ask, for example:
@@ -37,7 +38,7 @@ Then start a new Codex task and ask, for example:
 
 ```sh
 mkdir -p ~/.claude/skills
-cp -R code-review-skills/dist/claude-code/evidence-code-review ~/.claude/skills/
+cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 ```
 
 Start a new Claude Code session and invoke the Skill, for example:

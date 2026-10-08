@@ -20,13 +20,14 @@ CodexとClaude Code向けの、根拠を重視したコードレビューワー�
 
 ```sh
 git clone --depth 1 --branch v1.0.0 https://github.com/akkie76/code-review-skills.git
+cd code-review-skills
 ```
 
 ### Codex
 
 ```sh
 mkdir -p ~/.codex/skills
-cp -R code-review-skills/dist/codex/evidence-code-review ~/.codex/skills/
+cp -R dist/codex/evidence-code-review ~/.codex/skills/
 ```
 
 Codexの新しいタスクを開始し、たとえば次のように依頼します。
@@ -37,7 +38,7 @@ Codexの新しいタスクを開始し、たとえば次のように依頼しま
 
 ```sh
 mkdir -p ~/.claude/skills
-cp -R code-review-skills/dist/claude-code/evidence-code-review ~/.claude/skills/
+cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 ```
 
 Claude Codeの新しいsessionで、たとえば次のように呼び出します。

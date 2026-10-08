@@ -10,10 +10,10 @@ cloneします。
 
 ```sh
 git clone --depth 1 --branch v1.0.0 https://github.com/akkie76/code-review-skills.git
+cd code-review-skills
 ```
 
-以下のコマンドは、`code-review-skills/`にrepositoryをcheckoutした状態を想定して
-います。インストール前にpackageの内容を確認してください。
+インストール前にpackageの内容を確認してください。
 
 ## 適用範囲を選ぶ
 
