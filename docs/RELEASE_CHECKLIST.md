@@ -42,6 +42,13 @@ release while any required item remains incomplete.
       Japanese requests; state the limited scope.
 - [ ] Any unexpected finding has been classified as valid, ambiguous, or a
       false positive and reflected in the fixtures or methodology.
+- [ ] Add a dated, sanitized summary of the release-candidate behavioral
+      evidence to `tests/results/` and reference it from the release notes.
+      Record campaign provenance (including reused runs), artifact/version
+      identifiers, models and CLI versions, permissions and isolation limits,
+      per-case and finding-level outcomes, repeat variation, usage/cost when
+      available, adjudication method, and evaluation limits. Keep raw answers,
+      traces, grading contexts, and machine-local paths outside the repository.
 
 Optional quality step:
 
