@@ -91,8 +91,8 @@ Languages, frameworks, architecture, and test commands differ by repository.
 Put the information needed for an accurate review in that repository's
 `AGENTS.md`, `CLAUDE.md`, or a project document referenced by those files. Useful
 context includes version constraints, lifecycle or concurrency rules,
-architecture conventions, and verification commands. The Skill does not edit
-the installed package; updates may replace it.
+architecture conventions, and verification commands. Do not store project
+information in the installed package; updates may replace it.
 
 ## Limits and expectations
 
@@ -104,8 +104,9 @@ the installed package; updates may replace it.
 - The Skill does not grant additional permissions. File access and approval
   behavior are controlled by the host agent and its settings.
 - Reviewing large changes may consume substantial model tokens.
-- Evaluation results and their limitations are documented in the
-  [evaluation guide](tests/README.md) and linked reports.
+- The [latest evaluation report](tests/results/2026-10-08-issue-24-v2-evaluation.md)
+  describes a small synthetic fixture campaign, not production review accuracy;
+  see the [evaluation guide](tests/README.md) for context and other reports.
 
 ## Updates and support
 
