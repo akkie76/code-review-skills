@@ -7,6 +7,25 @@
 形式は[Keep a Changelog](https://keepachangelog.com/ja/1.1.0/)を参考にし、
 [Semantic Versioning](https://semver.org/lang/ja/spec/v2.0.0.html)を採用します。
 
+## [1.0.0] - 2026-10-10
+
+### 追加
+
+- Codex・Claude Code向けのローカル評価runnerと、エージェントごとの80点基準を
+  用いる人手判定の採点手順
+- 29件の基本caseとエージェントごとに6件の診断用反復を扱い、campaignの経緯と
+  制約を記録した機密情報除去済みのv2評価レポート
+- 1.0.0向けの安定版リリース文書、インストール案内、脆弱性報告手順
+
+### 変更
+
+- 補強根拠の検証、正確だが対応不要な対象範囲の注記、必須のリポジトリ規約違反や
+  起動を妨げるセットアップ手順、変更によって生じた未使用ヘルパー、挙動変更に対応する
+  テスト不足の扱いを明確化
+- 文書化した指摘出力契約を安定仕様としつつ、具体的な指摘、検出率、反復実行時の
+  表現はモデルやプロジェクトの文脈に依存することを明記
+- 安定版向けにREADMEとサポート方針を更新
+
 ## [0.1.0-beta.2] - 2026-10-04
 
 ### 追加
@@ -61,5 +80,6 @@
 - 根拠を添えたベータ版feedbackを受け付ける構造化Issue formと、Pull Requestの
   事前合意制を維持するサポート方針
 
+[1.0.0]: https://github.com/akkie76/code-review-skills/releases/tag/v1.0.0
 [0.1.0-beta.2]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.1
