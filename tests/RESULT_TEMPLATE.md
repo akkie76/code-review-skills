@@ -5,20 +5,39 @@
 - Date:
 - Evaluator:
 - Agent and product version:
-- Model:
+- Requested model / CLI-reported model / evidence source:
 - Skill commit or release:
+- Skill version / source hash / actual package hash:
+- Worktree dirty / evaluation inputs dirty:
 - Case ID:
 - Request language:
 - Fresh session: yes / no
-- Skill invoked: yes / no / not observed
+- Invocation mode: implicit / explicit
+- Invocation evidence: confirmed / call_requested / call_failed / by_construction / file_read_observed / not_observed
+- Skill invoked: yes / no / not verified
+- Tool permissions / fixture-code execution allowed:
+- Denied verification attempts / isolation limitations:
 - Fixture expectations: pass / fail
 - Skill behavior assessment (if invoked): pass / fail / limited
 - Expected prefixes observed:
 - Required behavior observed:
 - Prohibited behavior observed:
 - Additional comments:
+- Non-finding questions / scope notes and verified factual premises:
 - Classification of unexpected output: valid / ambiguous / false positive
+- Campaign manifest hash / phase (primary or repeat):
+- Required expectation indices detected / missed:
+- Optional / valid additional / duplicate / unsupported findings:
+- Unsupported supporting claims / prohibited expectation indices:
+- Human finalization / reviewer / unresolved judgments:
+- Grading inputs / excluded files / redactions:
+- Private grading-context inventory / hash / omitted infrastructure:
+- Indeterminate claims due to grading exclusions / reconciliation evidence:
 - Follow-up:
+
+Keep output matches separate from invocation evidence and syntax checks. A
+file read is weaker than a dedicated Skill tool event. Do not combine implicit
+and explicit runs, or attribute dirty inputs to the recorded commit alone.
 
 Do not include private repository content, credentials, personal data, or
 unpublished correspondence in a record intended for publication.

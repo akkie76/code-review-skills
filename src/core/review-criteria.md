@@ -141,6 +141,14 @@ Check for:
 - Test constants that duplicate implementation details and can drift from the
   specification they are meant to verify.
 
+Treat a verified coverage gap for changed observable behavior or an important
+failure mode as a potential `SHOULD(Test)` finding even when the implementation
+appears correct. Tie it to inspected tests and a concrete regression they would
+fail to detect, and propose the behavior or assertions that need verification.
+When this establishes a material verification risk, report it as a finding
+rather than only a summary caveat. Tests you could not run are a verification
+limitation, not evidence that coverage is missing.
+
 Do not require a test merely because a line changed. State the failure the
 missing test would need to catch.
 

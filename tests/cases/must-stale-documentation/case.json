@@ -6,7 +6,10 @@
     "must_report": [
       "The implementation now requires API_TOKEN, while the setup guide still tells users it is optional."
     ],
-    "must_not_report": ["Rewrite unrelated sections of the setup guide."],
+    "must_not_report": [
+      "Rewrite unrelated sections of the setup guide.",
+      "Restore anonymous mode despite the approved requirement that API_TOKEN is mandatory."
+    ],
     "prefixes": ["MUST(Document)"],
     "output": "findings"
   }

@@ -7,7 +7,7 @@
       "The domain module now imports the presentation layer despite the repository's dependency rule."
     ],
     "must_not_report": ["Demand an unrelated architecture redesign."],
-    "prefixes": ["SHOULD(Design)"],
+    "prefixes": ["MUST(Design)"],
     "output": "findings"
   }
 }

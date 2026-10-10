@@ -2,118 +2,122 @@
 
 [日本語](README.ja.md)
 
-Code Review Skills is an evidence-driven code-review workflow for AI coding
-agents. It helps Codex and Claude Code find actionable defects while avoiding
-style-only comments and unsupported speculation.
+An evidence-driven code-review workflow for Codex and Claude Code.
 
 This Skill is based on ideas from [*コードレビューの教科書*](https://gihyo.jp/book/2026/978-4-297-15768-5)
 and independently adapts them for AI coding agents. It does not reproduce or
 replace the book.
 
-> **Beta:** The review methodology and packaging are under evaluation. Expect
-> changes before the first stable release.
+**Version:** `v1.0.0` · **License:** MIT
 
-## What it does
+The documented review-output format is stable from 1.0.0. Review decisions are
+still model- and context-dependent: this Skill does not guarantee that every
+defect will be found or that repeated reviews will produce identical findings.
 
-- Establishes the requested review scope and repository-specific rules.
-- Traces changed behavior beyond the modified lines.
-- Checks correctness, interfaces, design, security, reliability, tests, and
-  documentation according to risk.
-- Optionally decomposes complex reviews across independent sub-agents when the
-  environment supports delegation, followed by a required integration pass.
-- Requires a concrete trigger and impact for every finding.
-- Prefixes each comment with its action level and viewpoint, such as
-  `MUST(Functionality):` or `BETTER(Simplicity):`.
-- Produces prioritized findings in English or Japanese.
+## Get started
 
-The skill reviews code; it does not modify the reviewed code unless the user
-separately asks for changes.
+Clone the release tag so the installed package has a known version:
 
-See the [review comment convention](docs/REVIEW_COMMENTS.md) for action levels,
-viewpoints, and communication rules.
-
-## Install
-
-Clone this repository and copy the complete package directory for your agent.
-Copying only `SKILL.md` omits required references.
+```sh
+git clone --depth 1 --branch v1.0.0 https://github.com/akkie76/code-review-skills.git
+cd code-review-skills
+```
 
 ### Codex
-
-For all local projects:
 
 ```sh
 mkdir -p ~/.codex/skills
 cp -R dist/codex/evidence-code-review ~/.codex/skills/
 ```
 
-For one repository, copy the package to
-`.agents/skills/evidence-code-review/` inside that repository instead. Start a
-new Codex task after installation, then ask it to use `evidence-code-review` to
-review a diff, commit, branch, pull request, or working tree.
+Then start a new Codex task and ask, for example:
+
+> Use the `evidence-code-review` skill to review the changes on this branch against `main`. Focus on correctness, regressions, and tests. Do not modify files.
 
 ### Claude Code
-
-For all local projects:
 
 ```sh
 mkdir -p ~/.claude/skills
 cp -R dist/claude-code/evidence-code-review ~/.claude/skills/
 ```
 
-For one repository, copy the package to
-`.claude/skills/evidence-code-review/` inside that repository instead. Invoke
-it with `/evidence-code-review` or ask Claude Code to use the
-`evidence-code-review` skill. Automatic selection can vary with context; when
-you need the Skill to run, invoke `/evidence-code-review` explicitly.
+Start a new Claude Code session and invoke the Skill, for example:
 
-The installed package records its version in a `skill-version` comment near
-the top of `SKILL.md`. This repository's current version is in `VERSION`.
-See the [versioning and compatibility policy](docs/VERSIONING.md) for the
-documented output contract and release-version rules.
-
-Review a skill before installing it. A skill supplies instructions to an
-agent and should be treated like other executable development configuration.
-See the [installation guide](docs/INSTALLATION.md) for project installation,
-Windows commands, verification, updates, removal, and troubleshooting.
-
-## Development
-
-The files under `src/core/` are the canonical, vendor-neutral methodology.
-Files under `dist/` are generated and must not be edited directly.
-
-```sh
-make build  # regenerate every agent package
-make check  # validate frontmatter, links, and generated freshness
-make test   # also validate behavioral evaluation fixtures
+```text
+/evidence-code-review Review the changes on this branch against main. Focus on correctness, regressions, and tests. Do not modify files.
 ```
 
-`make build` uses only the Python standard library and does not require
-network access. See [the evaluation guide](tests/README.md) for manual testing
-with each agent.
+For project-only installation, Windows instructions, verification, updates,
+removal, and troubleshooting, see the [installation guide](docs/INSTALLATION.md).
 
-### Project technology guidance
+## What it reviews
 
-Language, framework, SDK, and tool requirements vary by project. Store the
-information needed for accurate reviews in the reviewed repository's
-`AGENTS.md`, `CLAUDE.md`, or a project document referenced by those files. Do
-not edit the installed Skill; updates may replace it.
+- Establishes the requested scope and repository-specific rules.
+- Traces changed behavior through affected code paths, not only changed lines.
+- Checks correctness, interfaces, design, security, reliability, tests, and
+  documentation according to risk.
+- Reviews code without modifying it unless you separately ask for changes.
 
-Relevant material can include version constraints, lifecycle or concurrency
-rules, architecture conventions, and verification commands. If no guidance is
-supplied, the reviewer uses repository evidence and avoids assuming
-technology-specific guarantees.
+## What a review looks like
 
-## Project policy
+Actionable comments start with an action level and viewpoint:
 
-This project currently follows a maintainer-led beta process. Evidence-backed
-Issues about defects, review accuracy, agent compatibility, and documentation
-are welcome. Pull requests require prior agreement. See
-[SUPPORT.md](SUPPORT.md) for the scope and evidence expected, and
-[SECURITY.md](SECURITY.md) for private vulnerability reporting guidance.
+- `MUST`: a demonstrated issue that must be resolved before merge.
+- `SHOULD`: a concrete risk that normally should be addressed, but may be
+  deferred by an explicit decision.
+- `BETTER`: an optional alternative with a specific benefit.
+- `NITS`: a minor, non-blocking correction.
 
-The repository contains independently authored material. Its source and
-publication boundaries are described in
-[docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md).
+The viewpoint explains the concern, such as `Functionality`, `Test`,
+`Simplicity`, or `Document`. A finding should give its location and concrete
+evidence, explain when it occurs and its impact, and suggest a proportionate
+direction.
+
+```text
+MUST(Functionality): Advance the page before requesting the next result set
+
+Location: `src/client.ts:42`
+When the API returns a full page, this loop requests the same page again because
+`page` never changes. That duplicates results and increases request volume;
+advance the page before the next request.
+```
+
+This is an illustrative example. See the [review comment convention](docs/REVIEW_COMMENTS.md)
+for the full action-level, viewpoint, evidence, and communication rules.
+
+## Project-specific context
+
+Languages, frameworks, architecture, and test commands differ by repository.
+Put the information needed for an accurate review in that repository's
+`AGENTS.md`, `CLAUDE.md`, or a project document referenced by those files. Useful
+context includes version constraints, lifecycle or concurrency rules,
+architecture conventions, and verification commands. Do not store project
+information in the installed package; updates may replace it.
+
+## Limits and expectations
+
+- Results depend on the model, agent version, available tools, review scope, and
+  project information. A stronger model may help, but does not guarantee a
+  correct or complete review.
+- Use this Skill alongside tests and human review; it is not a substitute for
+  either and cannot guarantee zero missed defects or false positives.
+- The Skill does not grant additional permissions. File access and approval
+  behavior are controlled by the host agent and its settings.
+- Reviewing large changes may consume substantial model tokens.
+- The [latest evaluation report](tests/results/2026-10-08-issue-24-v2-evaluation.md)
+  describes a small synthetic fixture campaign, not production review accuracy;
+  see the [evaluation guide](tests/README.md) for context and other reports.
+
+## Updates and support
+
+- The [versioning policy](docs/VERSIONING.md) describes the stable output
+  contract and how changes map to versions.
+- See the [installation guide](docs/INSTALLATION.md) for updating or removing
+  an installation.
+- Evidence-backed bug and accuracy reports are welcome under the
+  [support policy](SUPPORT.md). Pull requests require prior agreement.
+- Report suspected vulnerabilities privately as described in
+  [SECURITY.md](SECURITY.md).
 
 ## License
 

@@ -11,15 +11,15 @@ Review the requested code change with the shared workflow below. Use the
 repository's available file, search, diff, and test tools to gather evidence.
 Do not modify the reviewed code unless the user separately asks for changes.
 
-<!-- skill-version: v0.1.0-beta.2 -->
+<!-- skill-version: v1.0.0 -->
 
-<!-- source-sha256: e8f57bd7b179d798f100bdc5444d8cdaf2549ef021d7a959539da80cee35733b -->
+<!-- source-sha256: 104fe8438c7e44011ebd3f748c701550eccdbec8d36665089a604becf4e8f719 -->
 
 # Review Workflow
 
 Use this workflow to review a proposed code change. The objective is to find
-actionable defects introduced by the change, not to produce the largest
-possible list of comments.
+actionable defects and concrete quality or verification risks introduced by
+the change, not to produce the largest possible list of comments.
 
 ## 1. Establish the review contract
 
@@ -143,9 +143,9 @@ checklist report.
 
 Before reporting an issue, answer all of the following:
 
-- What exact behavior is wrong?
+- What verified defect or concrete quality or verification risk exists?
 - Which input, state, timing, or environment triggers it?
-- What user-visible or system-level impact follows?
+- What user-visible, system-level, maintenance, or verification impact follows?
 - Is the issue introduced by the reviewed change?
 - Does surrounding code, configuration, or a framework guarantee invalidate
   the concern?
@@ -157,16 +157,20 @@ nearby pattern, unchanged behavior, caller count, contract, or specific
 location as supporting evidence, read that exact source and confirm that it
 states or implements what the finding attributes to it. Do not infer a cited
 fact from a similar pattern elsewhere. Remove unverified supporting detail even
-when the core conclusion remains correct.
+when the core conclusion remains correct. Apply this check to the whole response,
+including open questions, summaries, and hedged supporting sentences. Verify
+named functions, files, and behavior before mentioning them; a question mark or
+"might" does not excuse an invented factual premise.
 
 Investigate uncertain claims. When a candidate's trigger can be checked safely,
 within the requested scope, and with available trusted tools, prefer the
 smallest focused test or static check that exercises the suspected risky input
 or path rather than only a convenient safe variant. Do not execute untrusted
 project code or commands without authorization, and avoid checks whose side
-effects cannot be isolated. If a claim remains speculative, omit it or
-explicitly present it as a question outside the formal findings. Do not use a
-lower action level as a substitute for validation; assign the level after the
+effects cannot be isolated. Omit unverifiable speculation. Ask a question outside
+the formal findings only when a material contract or intent is unresolved,
+grounding its premise in inspected evidence without implying an unproven defect.
+Do not use a lower action level as a substitute for validation; assign the level after the
 problem is established, based on its demonstrated impact.
 
 ## 6. Control false positives
@@ -184,6 +188,12 @@ Do not report:
   guarantees.
 - Multiple comments for the same root cause when one precise finding is
   sufficient.
+
+An accurate, explicitly non-actionable scope note is not a finding. Mention an
+unchanged defect only when necessary to explain the reviewed scope or a material
+verification limit; do not ask for its repair, attribute it to this change, or
+add a catalogue of unrelated defects. Verify the baseline before calling it
+pre-existing.
 
 ## 7. Produce the review
 

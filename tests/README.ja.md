@@ -30,6 +30,13 @@ Pythonの構文コンパイルを行います。patch適用後のPython fixture�
 Goの依存関係のダウンロードは無効です。いずれの検査も、エージェントが実際に
 誤検知を抑制するかは検証しません。
 
+Batch 3のfixtureは、リポジトリの契約を示して文書とテスト不足の指摘を評価します。
+`must-stale-documentation`では`API_TOKEN`必須化が承認済みの変更であると明記し、
+setup guideには匿名モードの説明を残しています。`should-missing-test`では、
+冪等な読み取りと再試行の契約を明記し、patchでnull・undefinedの拒否理由を保持します。
+既存テストは成功系だけのままです。これらの整理で必須指摘は変更せず、過去の評価結果を
+遡って変更しません。実行を比較するときはrevisionを記録してください。
+
 `realistic-go-directory`、`realistic-java-fulfillment`、
 `realistic-python-profile`、`realistic-python-retry-audit`、
 `realistic-python-notice-batch`は、対応が必要な変更と無関係でもっともらしい変更を
@@ -44,7 +51,84 @@ Goの依存関係のダウンロードは無効です。いずれの検査も、
 `must_not_report`の候補も含めて各関心事を確認します。既存のJavaScriptのcaseを
 含めると、評価セット全体で4言語の実質的な例を扱います。
 
+## 任意実行のエージェントローカル評価
+
+既定はCodexです。`--agent claude`でClaude向けpackageを配置し、非対話・静的レビュー用の
+手順で実行します。実行PCでClaudeの認証と選んだmodelが利用できる必要があります。
+以下のCodex固有の説明はClaudeのsandboxとの同等性を示すものではありません。
+[共通の評価手順](EVALUATION_RUBRIC.ja.md)も確認してください。
+
+`make test`は引き続きオフラインであり、モデルを呼び出しません。トークンを消費せずに
+Codexの実行予定を確認するには、case IDを1つ以上（または明示的に`--all`）指定します。
+
+```sh
+make eval EVAL_ARGS="--case negative-refactor --language ja --runs 2"
+```
+
+全caseを初回評価する際は、[4グループの分割実行計画](EVALUATION_BATCHES.ja.md)を
+使用してください。実際の呼び出しを最大2caseに分け、次のbatchへ進む前に残りの
+利用枠を確認します。
+
+言語指定を省略すると、英語依頼があるcaseでは英語、ないcaseでは日本語を選びます。
+実際にモデルを呼び出す場合のみ`--execute`を追加します。実行ごとに一時Gitリポジトリを
+新規作成し、fixtureの元ファイルと生成済みCodex Skillを`.agents/skills/`へ配置します。
+作業場所は中立なランダム名`repo-`、基準commitの作者は`Developer`とし、case IDは
+ローカルの結果ディレクトリにのみ使います。patchは未コミットの可視diffとして適用します。
+Codexは読み取り専用・非対話・一時sessionで
+動作し、sandboxを無効にするオプションは使用しません。`--model`と`--timeout`は任意で、
+省略時はローカルCLIの既定モデルと1実行あたり10分の制限を使用します。
+
+出力先は既定でリポジトリ外に作られる新規の非公開ローカルディレクトリです。
+`--output-dir`で別の新規ディレクトリも指定できます。場所は実行終了時に表示します。
+指定先と既定の一時保存場所（`TMPDIR`）は、シンボリックリンクの解決後にリポジトリ内なら
+出力を作る前に拒否します。拒否された場合はリポジトリ外の`--output-dir`を指定してください。
+各実行の`events.jsonl`、`answer.txt`、`stderr.txt`と、集計用の`summary.json`を保存します。
+生の記録はコミットせず、共有前に内容を確認し、不要になったらローカルから削除してください。
+
+schema 2の集計は、指定モデルと、CLIの開始イベントまたはstderrのmodel headerで
+報告されたモデルを分けて記録します。CLIが情報を出さない場合は`observed_model`を
+nullとし、指定しただけのモデルを観測済みとしません。repositoryのrevision、全体の
+未コミット状態、評価入力に関係する未コミット状態、Skillの版・生成元hash・実際の
+package hashも記録します。各実行では、参照ファイルを含むコピー後のpackageをhash化します。
+無関係な未追跡ファイルで`worktree_dirty`だけがtrueになる場合があります。
+`evaluation_inputs_dirty`の対象は`src`・`dist`・`tests/cases`とrunnerです。
+revisionだけでは未コミットの入力を識別できません。
+
+形式チェックはMarkdown見出し、番号付きリスト、強調、inline codeのタイトルに対応します。
+負例の`negative_output_check`は「回答が空でなく、認識した指摘prefixがない」ことだけを示します。
+「指摘なし」の文言は`explicit_no_findings`へ別に記録しますが、ベストエフォートの文言検出による
+参考情報にすぎません。表現による取りこぼしや、指摘を含む回答の部分的な「問題なし」への
+反応があり、合否判定には使いません。prefixのない不具合の主張も
+形式チェックを通るため、人の判定が必要です。空の回答は合格にせず、runnerを非zeroで終了します。
+これらの変更で過去の集計や評価結果は書き換えません。
+
+設定、case、実行回数、取得可能なtoken利用量、Skill読み取りの根拠も記録します。
+同じshell内の後続コマンドが失敗しても、出力にインストール済みSkillの全文があれば
+読み取りを確認できます。失敗したコマンドの部分出力だけでは確認しません。
+ファイルの読み取りだけではSkillがレビューへ影響した証拠にはならず、レビュー本文は集計に含めません。
+Skillの起動確認、指摘の意味的な一致、想定外の指摘の分類、指摘単位の指標、
+一般的な精度の算出は**行いません**。生の記録と`case.json`を
+人が照合し、起動の有無を別に記録し、想定外の主張を有効・曖昧・重複・根拠不足に
+分類してください。判定には下記の手動評価記録を使用します。エージェント実行には
+相応のトークンを消費する可能性があるため、事前表示と`--execute`を必須にしています。
+これは[Issue #24](https://github.com/akkie76/code-review-skills/issues/24)の初期段階であり、
+両エージェントで行うリリース評価の代替ではありません。
+
 ## エージェントによる手動評価
+
+#24の80点を基準とする評価には、[判定ルール・集計手順](EVALUATION_RUBRIC.ja.md)を使います。
+v2の採点基準では、根拠のある質問・正確で対応不要の対象外注記を指摘と分けつつ、回答全体の
+事実の前提を検証します。断りを付けても根拠不足は許しません。必須レイヤー規約のfixtureは
+`MUST(Design)`へ修正し、setupの`MUST`・小さな未使用helperの`NITS`は維持します。
+変更は新しい固定campaignにのみ適用し、過去の得点は書き換えません。
+
+各runの非公開`grading-context.json`（ファイル一覧・hash・採点時の除外先）も回答とともに採点者へ渡し、
+生の実行ディレクトリを丸ごと転送してください。この情報は公開しません。
+
+`make eval-score`で入力を固定し、runnerの生の集計をローカルの未確認注記へ取り込み、
+人が確定した判定を集計します。`make eval`は静的レビュー用の手順に沿った
+`--agent claude`にも対応します。runnerへ明示的に`--execute`を指定しなければ
+モデルを呼び出さず、集計処理は常にオフラインです。
 
 CodexとClaude Codeの両方で、caseごとに次を実施します。
 
@@ -68,6 +152,51 @@ CodexとClaude Codeの両方で、caseごとに次を実施します。
 少なくとも1つの負例を、各エージェントで英語と日本語の両方の依頼文により評価します。
 fixtureの形式だけから言語間の挙動を推測しないでください。
 
+ブラインド採点では、採点者へ渡したファイルと除外・置換内容（例：`.claude/`の除外や
+エージェント名の置換）を記録し、レビュー担当には除外対象も見えていたことを採点者へ
+明示します。縮小した採点入力だけでは確認できないリポジトリ構成の主張は、直ちに誤検知と
+せず未確定とし、機密情報を除いたファイル一覧や関連記録と照合して判定してください。
+採点入力に根拠がないことだけで、主張が捏造されたと判断しないでください。
+
+### Claude Codeの評価手順
+
+同じrevisionのClaude向けpackageを、新規の中立な作業場所の
+`.claude/skills/evidence-code-review/`へ配置し、基準commitの作者も中立なものにします。
+基本は`implicit`（自動選択）として`case.json`の依頼文だけを送信します。
+Skill起動を観測できなかった回だけ、必要に応じて`/evidence-code-review <依頼文>`で
+`explicit`（明示呼び出し）の切り分け評価を行います。方式を記録し、両方式を合算しません。
+
+出力の期待値一致とは別に、起動の根拠を記録します。
+
+| エージェント・方式 | 根拠 | 記録する値 |
+| --- | --- | --- |
+| Claude・implicit | `evidence-code-review`への`Skill`要求と、同じIDに対応する成功した`tool_result` | `confirmed`。要求のみ：`call_requested`、失敗結果：`call_failed`、観測なし：`not_observed` |
+| Claude・explicit | 明示コマンドに加え、initイベントの`skills`一覧に存在 | `by_construction`。起動を直接観測したものではない |
+| Codex | CLI記録上のSkillファイル読み取り | `file_read_observed`。起動は`not_verified`のまま |
+
+`references/`の読み取りは補助情報であり、単独で起動の証拠にはしません。
+Claudeの`not_observed`で期待出力と一致しても、Skillの合格には数えません。
+
+Claude CLI `2.1.281`の評価では、[PR #44の報告](https://github.com/akkie76/code-review-skills/pull/44#issuecomment-5996575210)
+にある、次の非対話・静的レビュー用の固定許可一覧を使いました。
+
+```sh
+claude -p "<case.jsonの依頼文>" \
+  --setting-sources project --strict-mcp-config --no-session-persistence \
+  --allowedTools "Read" "Grep" "Glob" "Skill" \
+    "Bash(git diff:*)" "Bash(git status:*)" "Bash(git log:*)" "Bash(git show:*)" \
+  --disallowedTools "Edit" "Write" "NotebookEdit" "WebFetch" "WebSearch" \
+  --output-format stream-json --verbose
+```
+
+インストールしたCLIとアカウントで利用可能なモデルを選び、記録してください。
+固定した権限、拒否された検証の試行、CLIが報告した情報も記録します。このClaude手順は
+fixtureのコード実行を許可しません。Codexのread-onlyは書き込みを制限しますが、
+絞ったPython検証などの実行を許可する場合があり、同じ権限条件ではありません。
+結果比較時はこの違いを明記します。`--setting-sources project`だけではユーザー単位の
+Skillやmemoryを除外した証明になりません。その制約を記録し、比較条件に必要なら
+別途隔離した環境を使用してください。
+
 日付入りで機密情報を除いた評価サマリーは公開リポジトリへ記録できます。
 生のmodel transcriptはリポジトリ外で管理し、端末固有のパス、非公開リポジトリの
 内容、認証情報、未公開のやり取りはコミットしません。
@@ -86,6 +215,17 @@ beta.2で選択したcaseの結果と、全件評価ではないという制約�
 [2026-10-04のClaude Codeリリース候補の評価](results/2026-10-04-claude.ja.md)には、
 全28件と追加の日本語負例1回の結果、および2件のprefix不一致を記録しています。
 betaの判断で逸脱を容認しても、厳密な結果は27/29のままです。
+[2026-10-06のCodex残りバッチ評価](results/2026-10-06-codex-remaining.ja.md)には、
+1つのrevisionでの残り19ケース（厳密な一致16/19）と、検証リスクの指摘条件を
+明文化した後のテスト不足の再評価成功を記録しています。分類差と委譲動作未検証の
+制約も残しており、最終revisionで全28ケースを揃えた評価ではありません。
+[2026-10-06のClaude Code報告](https://github.com/akkie76/code-review-skills/pull/44#issuecomment-6007929541)
+は、Skillとfixture変更後の`5fb7864`で29回実行し、厳密な一致26/29、Skill起動確認29/29を
+記録しています。必須内容はすべて指摘されていますが（負例には必須指摘がありません）、
+prefix差3件が残っています。メンテナーによる報告であり、独立した検証や以前のrevisionと
+同一入力での反復ではありません。得点が同じことだけで精度の向上・低下は示せません。
+当初根拠不足とされた主張1件は、インストール済みSkillのファイルが採点入力から除外されていた
+ことによる採点上の誤判定と判断されています。
 
 ## 複数エージェント評価の境界
 

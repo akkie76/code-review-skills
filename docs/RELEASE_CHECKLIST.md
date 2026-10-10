@@ -22,13 +22,13 @@ release while any required item remains incomplete.
       realistic multi-file change, and the highest-risk outstanding behavior
       concerns. Confirm Skill invocation for every result counted as a Skill
       pass. Full-suite behavioral execution is useful evidence, but a 100%
-      exact-prefix score on every single run is not a beta release gate.
+      exact-prefix score on every single run is not a release gate.
 - [ ] Adjudicate every observed missed required finding, prohibited finding,
       prefix mismatch, or unsupported factual claim. Do not accept a missed
       security/data-loss defect or a false-positive finding as a harmless
       formatting deviation. A non-critical omitted `SHOULD`, `BETTER`, or
       `NITS` finding, a non-central prefix difference, or a supporting-detail
-      error may be accepted for this beta only when its impact, rationale, and
+      error may be accepted only when its impact, rationale, and
       follow-up are recorded in the evaluation summary and release notes.
 - [ ] For Claude Code, record the CLI version, model, Skill revision, and
       request language. In each fresh session, confirm Skill invocation from
@@ -42,6 +42,13 @@ release while any required item remains incomplete.
       Japanese requests; state the limited scope.
 - [ ] Any unexpected finding has been classified as valid, ambiguous, or a
       false positive and reflected in the fixtures or methodology.
+- [ ] Add a dated, sanitized summary of the release-candidate behavioral
+      evidence to `tests/results/` and reference it from the release notes.
+      Record campaign provenance (including reused runs), artifact/version
+      identifiers, models and CLI versions, permissions and isolation limits,
+      per-case and finding-level outcomes, repeat variation, usage/cost when
+      available, adjudication method, and evaluation limits. Keep raw answers,
+      traces, grading contexts, and machine-local paths outside the repository.
 
 Optional quality step:
 
@@ -67,14 +74,15 @@ Optional quality step:
 
 ## Release
 
-- [ ] `VERSION` contains `0.1.0-beta.2`, and both generated Skill packages
-      identify `v0.1.0-beta.2`.
-- [ ] Both changelogs contain a dated `0.1.0-beta.2` section and release link.
-- [ ] `docs/releases/v0.1.0-beta.2.md` matches the final release contents.
+- [ ] `VERSION`, the version displayed in both READMEs, and both generated
+      Skill package markers agree on `1.0.0`.
+- [ ] Both changelogs contain a dated `1.0.0` section and release link.
+- [ ] `docs/releases/v1.0.0.md` and `docs/releases/v1.0.0.ja.md` match the
+      final release contents.
 - [ ] Any output-contract addition or material review-behavior change is
       explained in the release notes with relevant evaluation evidence or limits.
 - [ ] The release commit has received final review.
-- [ ] Tag `v0.1.0-beta.2` only after every required item above is complete.
+- [ ] Tag `v1.0.0` only after every required item above is complete.
 - [ ] Run `make release-tag-check` after tagging to verify the tag, both
       changelogs, both release notes, `VERSION`, and both generated packages.
-- [ ] Mark the GitHub Release as a pre-release.
+- [ ] Publish the GitHub Release as a stable release, not a pre-release.
