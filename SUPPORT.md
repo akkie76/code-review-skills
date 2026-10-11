@@ -2,9 +2,10 @@
 
 [日本語](SUPPORT.ja.md)
 
-This repository is in a maintainer-led beta. Evidence-backed Issues are welcome
-when they help reproduce a defect or evaluate and improve the Skill. Responses,
-fixes, and timelines are not guaranteed. Pull requests require prior agreement.
+This repository follows a maintainer-led maintenance process. Evidence-backed
+Issues are welcome when they help reproduce a defect or evaluate and improve
+the Skill. Responses, fixes, and timelines are not guaranteed. Pull requests
+require prior agreement.
 
 ## Issues we accept
 

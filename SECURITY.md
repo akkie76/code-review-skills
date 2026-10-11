@@ -4,15 +4,16 @@
 
 ## Supported versions
 
-Until the first stable release, only the latest commit on the default branch
-is considered for security fixes.
+Security reports are assessed against the latest stable release. Fixes for
+older versions are not guaranteed; update to the latest release before
+reporting when possible.
 
 ## Reporting a vulnerability
 
-Do not open a public Issue for a vulnerability. Use GitHub's private
-vulnerability reporting feature for this repository when it is enabled. If
-the feature is unavailable, send [@akkiee76](https://x.com/akkiee76) a direct
-message requesting a secure contact method. Do not include vulnerability
+Do not open a public Issue for a vulnerability. Use [GitHub private
+vulnerability reporting](https://github.com/akkie76/code-review-skills/security/advisories/new).
+If the feature is unavailable, send [@akkiee76](https://x.com/akkiee76) a
+direct message requesting a secure contact method. Do not include vulnerability
 details in the message or disclose them publicly.
 
 Include the affected revision, impact, reproduction conditions, and the

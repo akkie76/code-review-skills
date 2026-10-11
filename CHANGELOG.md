@@ -7,6 +7,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-10-10
+
+### Added
+
+- A local evaluation runner for Codex and Claude Code, plus a human-adjudicated
+  scoring workflow with an 80-point per-agent acceptance threshold.
+- A sanitized v2 evaluation report covering 29 primary cases and six diagnostic
+  repeats per agent, with campaign provenance and limitations.
+- Stable-release documentation, installation guidance, and security reporting
+  instructions for the 1.0.0 release.
+
+### Changed
+
+- Clarified review behavior for verifying supporting claims, handling accurate
+  non-actionable scope notes, identifying mandatory repository-rule violations
+  and startup-blocking setup instructions, and reporting change-created dead
+  helpers and behavior-specific test gaps.
+- Declared the documented finding-output contract stable while explicitly
+  leaving finding decisions, detection rates, and repeated-run wording dependent
+  on the model and project context.
+- Updated the READMEs and support policies for the stable release.
+
 ## [0.1.0-beta.2] - 2026-10-04
 
 ### Added
@@ -66,5 +88,6 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Structured Issue forms and a support policy for evidence-backed beta
   feedback while keeping pull requests subject to prior agreement.
 
+[1.0.0]: https://github.com/akkie76/code-review-skills/releases/tag/v1.0.0
 [0.1.0-beta.2]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/akkie76/code-review-skills/releases/tag/v0.1.0-beta.1

@@ -5,6 +5,16 @@
 `evidence-code-review` directory全体をインストールします。packageには`SKILL.md`が
 必要とするreferenceが含まれます。
 
+`v1.0.0`リリースの正確な内容を取得するため、コピーする前にリリースタグを指定して
+cloneします。
+
+```sh
+git clone --depth 1 --branch v1.0.0 https://github.com/akkie76/code-review-skills.git
+cd code-review-skills
+```
+
+インストール前にpackageの内容を確認してください。
+
 ## 適用範囲を選ぶ
 
 - 個人単位：現在の端末にある複数プロジェクトで利用する
